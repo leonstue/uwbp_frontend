@@ -72,16 +72,26 @@
 	<Tabs {tabs} bind:active={filter} />
 </div>
 
-{#if app.devicesError}
+{#if app.devicesError && app.devices.length === 0}
 	<Card>
 		<p class="error">Fehler beim Laden: {app.devicesError}</p>
 	</Card>
+{:else if app.devicesLoading && app.devices.length === 0}
+	<div class="skeleton">
+		{#each Array(3) as _, i (i)}
+			<div class="skel-row"></div>
+		{/each}
+	</div>
 {:else if app.devices.length === 0}
 	<Card>
 		<p class="empty">
 			Noch keine Geräte registriert. Schalte deine Anchors und Tags ein und prüfe die WLAN-Verbindung
 			zum Pi.
 		</p>
+	</Card>
+{:else if filtered.length === 0}
+	<Card>
+		<p class="empty">Keine {filter === 'anchor' ? 'Anchors' : 'Tags'} in dieser Ansicht.</p>
 	</Card>
 {:else}
 	<DeviceList devices={filtered} {savingIds} onSave={handleSave} onRemove={askRemove} />
@@ -108,5 +118,31 @@
 	}
 	.error {
 		color: var(--status-offline);
+	}
+	.skeleton {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.skel-row {
+		height: 56px;
+		background: linear-gradient(
+			90deg,
+			var(--bg-secondary) 0%,
+			var(--bg-tertiary) 50%,
+			var(--bg-secondary) 100%
+		);
+		background-size: 200% 100%;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		animation: skel 1.4s linear infinite;
+	}
+	@keyframes skel {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
 	}
 </style>
