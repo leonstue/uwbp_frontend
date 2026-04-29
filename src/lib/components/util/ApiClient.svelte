@@ -260,8 +260,7 @@
 				method: 'PUT',
 				body: JSON.stringify(data)
 			}),
-		remove: (id) =>
-			request(`/api/devices/${encodeURIComponent(id)}`, { method: 'DELETE' })
+		remove: (id) => request(`/api/devices/${encodeURIComponent(id)}`, { method: 'DELETE' })
 	};
 
 	const anchorsApi = {

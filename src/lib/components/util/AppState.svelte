@@ -11,9 +11,7 @@
 	// ---- env defaults ----
 	const POLL_POS_DEFAULT = Number(import.meta.env.VITE_POLL_INTERVAL_POSITIONS ?? 150);
 	const POLL_DEV_DEFAULT = Number(import.meta.env.VITE_POLL_INTERVAL_DEVICES ?? 2000);
-	const HISTORY_BUFFER_SECONDS_DEFAULT = Number(
-		import.meta.env.VITE_HISTORY_BUFFER_SECONDS ?? 600
-	);
+	const HISTORY_BUFFER_SECONDS_DEFAULT = Number(import.meta.env.VITE_HISTORY_BUFFER_SECONDS ?? 600);
 
 	// ---- state: data ----
 	let devices = $state([]);

@@ -44,7 +44,9 @@
 		color: var(--text-secondary);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		transition: background-color 150ms ease, color 150ms ease;
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
 	}
 	.tab:hover {
 		color: var(--text-primary);

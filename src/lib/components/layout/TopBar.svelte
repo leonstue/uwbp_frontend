@@ -91,12 +91,7 @@
 	{#if mobileOpen && !compact}
 		<nav class="nav-mobile" aria-label="Mobile Navigation">
 			{#each links as link (link.href)}
-				<a
-					href={link.href}
-					class="nav-link"
-					class:active={isActive(link.href)}
-					onclick={closeMenu}
-				>
+				<a href={link.href} class="nav-link" class:active={isActive(link.href)} onclick={closeMenu}>
 					{link.label}
 				</a>
 			{/each}
@@ -144,7 +139,9 @@
 		color: var(--text-secondary);
 		text-decoration: none;
 		font-size: var(--text-sm);
-		transition: background-color 150ms ease, color 150ms ease;
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
 	}
 	.nav-link:hover {
 		color: var(--text-primary);

@@ -64,7 +64,9 @@
 		border-radius: var(--radius-md);
 		color: var(--text-primary);
 		font-size: var(--text-sm);
-		transition: border-color 150ms ease, background-color 150ms ease;
+		transition:
+			border-color 150ms ease,
+			background-color 150ms ease;
 	}
 	.input:hover:not(:disabled) {
 		border-color: var(--border-strong);

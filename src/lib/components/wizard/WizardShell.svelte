@@ -55,7 +55,8 @@
 		{/if}
 		{#if showNext}
 			<Button onclick={next} disabled={!canGoNext}>
-				{nextLabel} <ChevronRight size={14} />
+				{nextLabel}
+				<ChevronRight size={14} />
 			</Button>
 		{/if}
 	</footer>

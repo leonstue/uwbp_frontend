@@ -92,7 +92,9 @@
 	:global(.flatpickr-day.inRange) {
 		background: var(--accent-glow);
 		border-color: var(--accent-glow);
-		box-shadow: -5px 0 0 var(--accent-glow), 5px 0 0 var(--accent-glow);
+		box-shadow:
+			-5px 0 0 var(--accent-glow),
+			5px 0 0 var(--accent-glow);
 	}
 	:global(.flatpickr-months .flatpickr-month),
 	:global(.flatpickr-current-month input.cur-year),

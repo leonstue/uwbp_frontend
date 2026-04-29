@@ -6,13 +6,7 @@
 	import Square from 'lucide-svelte/icons/square';
 
 	// ---- props ----
-	let {
-		playing = $bindable(false),
-		speed = $bindable(1),
-		onPlay,
-		onPause,
-		onStop
-	} = $props();
+	let { playing = $bindable(false), speed = $bindable(1), onPlay, onPause, onStop } = $props();
 
 	const speedOptions = [
 		{ value: 1, label: '1×' },

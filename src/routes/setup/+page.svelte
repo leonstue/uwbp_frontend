@@ -86,7 +86,14 @@
 	}
 </script>
 
-<WizardShell {steps} bind:current {canGoNext} onCancel={cancel} onNext={current === 6 ? finish : undefined} nextLabel={current === 6 ? 'Zum Dashboard' : 'Weiter'}>
+<WizardShell
+	{steps}
+	bind:current
+	{canGoNext}
+	onCancel={cancel}
+	onNext={current === 6 ? finish : undefined}
+	nextLabel={current === 6 ? 'Zum Dashboard' : 'Weiter'}
+>
 	{#if current === 0}
 		<WizardStep
 			title="Willkommen beim UWBP Setup"
@@ -199,10 +206,7 @@
 			</div>
 		</WizardStep>
 	{:else if current === 5}
-		<WizardStep
-			title="Tags benennen"
-			description="Gib jedem Tag einen Namen und eine Farbe."
-		>
+		<WizardStep title="Tags benennen" description="Gib jedem Tag einen Namen und eine Farbe.">
 			{#each app.tags as t (t.id)}
 				<Card>
 					<div class="namer">

@@ -3,7 +3,13 @@
 	let { steps = [], current = 0 } = $props();
 </script>
 
-<div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax={steps.length} aria-valuenow={current + 1}>
+<div
+	class="bar"
+	role="progressbar"
+	aria-valuemin="1"
+	aria-valuemax={steps.length}
+	aria-valuenow={current + 1}
+>
 	{#each steps as step, i (i)}
 		<div class="step" class:done={i < current} class:active={i === current}>
 			<span class="dot">{i + 1}</span>

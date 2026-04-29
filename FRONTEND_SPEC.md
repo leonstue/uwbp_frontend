@@ -25,8 +25,8 @@ Der Pi ist nur erreichbar wenn der User mit dem WLAN "UWBP" verbunden ist (Passw
 
 **Vorgeschlagene Port-Aufteilung:**
 
-| Service | Port | URL |
-|---------|------|-----|
+| Service            | Port   | URL                |
+| ------------------ | ------ | ------------------ |
 | C++ Backend (REST) | `8080` | `http://uwbp:8080` |
 | SvelteKit Frontend | `3000` | `http://uwbp:3000` |
 
@@ -64,6 +64,7 @@ Die Backend-API bleibt bei `8080`. Frontend macht intern fetch-Calls an `http://
 7. **Fertig** — Weiterleitung zum Dashboard
 
 **Logik:**
+
 - Polling auf `GET /api/devices` während Wizard läuft, um neu registrierte Devices live anzuzeigen
 - "Weiter"-Button erst aktiv wenn Mindestbedingung erfüllt (z.B. ≥3 Anchors)
 - Bricht User ab → springt direkt ins Dashboard, Wizard kann später aus Settings neu gestartet werden
@@ -73,6 +74,7 @@ Die Backend-API bleibt bei `8080`. Frontend macht intern fetch-Calls an `http://
 **Zweck:** Echtzeit-Übersicht über alle registrierten Devices und aktuelle Tag-Positionen.
 
 **Layout:**
+
 - **Statusleiste oben:** Server-Health, Anzahl verbundener Anchors, Anzahl Tags, aktuelle Polling-Rate, **Run-State-Toggle** (Läuft/Gestoppt)
 - **Hauptbereich (rechteckiges Visualisierungselement):** siehe "Visualisierungselement" weiter unten
 - **Rechte Sidebar — Alive-Ansicht:** Liste aller Devices (Anchors + Tags) mit:
@@ -84,21 +86,23 @@ Die Backend-API bleibt bei `8080`. Frontend macht intern fetch-Calls an `http://
 
 **Status-Farben (Alive-Ansicht):**
 
-| Status | Bedingung (lastSeen-Alter) | Farbe |
-|--------|---------------------------|-------|
-| Online | < 5 Sekunden | Grün |
-| Verzögert | 5-30 Sekunden | Gelb |
-| Offline | > 30 Sekunden | Rot |
+| Status    | Bedingung (lastSeen-Alter) | Farbe |
+| --------- | -------------------------- | ----- |
+| Online    | < 5 Sekunden               | Grün  |
+| Verzögert | 5-30 Sekunden              | Gelb  |
+| Offline   | > 30 Sekunden              | Rot   |
 
 Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device.lastSeen` berechnet.
 
 **Run-State (Live-Ansicht starten/beenden):**
+
 - **Läuft** (grün) → Polling aktiv, Tags bewegen sich, History-Buffer wird befüllt
 - **Gestoppt** (grau) → Polling pausiert, Visualisierung eingefroren auf letztem Frame
 - Beim Stoppen: Hinweis-Banner "Live-Ansicht pausiert. Daten werden weiter im Hintergrund vom Server gesammelt."
 - Backend läuft unverändert weiter — Stoppen betrifft nur das Frontend
 
 **Polling:**
+
 - `GET /api/positions` alle 100-200ms (Live-Positionen)
 - `GET /api/devices` alle 1-2s (Status-/lastSeen-Updates)
 
@@ -107,6 +111,7 @@ Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device
 **Zweck:** Alle registrierten ESP32s sehen, ihnen Namen und Farben geben, Status prüfen.
 
 **Inhalte:**
+
 - Tabelle/Liste mit allen Devices (Polling auf `GET /api/devices` alle 2-5s)
 - Spalten:
   - **Status** (Ampel-Dot mit Tooltip "Online / vor 2s")
@@ -125,6 +130,7 @@ Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device
 **Zweck:** Position der Anchors im Raum eintragen, ohne diese kann das System nicht trilaterieren.
 
 **Inhalte:**
+
 - Liste aller Anchors mit Eingabefeldern für x, y, z (Meter)
 - Status-Dot pro Anchor (Online/Offline)
 - Live-Vorschau: rechteckiges Visualisierungselement mit Anchor-Positionen, aktualisiert sich beim Tippen
@@ -138,6 +144,7 @@ Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device
 **Zweck:** Bewegung der Tags über Zeit visualisieren.
 
 **Inhalte:**
+
 - **Multi-Select für Tags** (Checkboxes mit Color-Dot): User wählt einen oder mehrere Tags aus, jeweils in eigener Farbe
 - **Zeitraum-Auswahl:** "letzte 1min / 5min / 15min / 1h" oder Custom-Range mit Datepicker
 - **Hauptbereich:** rechteckiges Visualisierungselement (gleicher Look wie Dashboard) zeigt **Trails/Pfade** der gewählten Tags im gewählten Zeitraum
@@ -158,6 +165,7 @@ Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device
 **Zweck:** System-Konfiguration und Präferenzen.
 
 **Inhalte:**
+
 - Polling-Intervall einstellbar (Live-Dashboard)
 - History-Buffer-Größe (Sekunden im Memory)
 - Theme (Light/Dark)
@@ -174,6 +182,7 @@ Status kommt aus dem Backend (`device.status`) oder wird im Frontend aus `device
 Wird auf Dashboard, History, Anchor-Kalibrierung und Setup-Wizard verwendet.
 
 **Aufbau:**
+
 - Rechteckiges Canvas-Element (responsive, behält Aspect-Ratio)
 - Boden-Grid (1m-Raster) zur Orientierung
 - Achsen-Indikator (Beschriftung passt sich an gewählter Ansicht an)
@@ -184,12 +193,12 @@ Wird auf Dashboard, History, Anchor-Kalibrierung und Setup-Wizard verwendet.
 
 **View-Toggle (Tab-Leiste am oberen Rand):**
 
-| Modus | Achsen-Mapping | Beschreibung |
-|-------|---------------|--------------|
-| **Draufsicht (XY)** | horizontal=X, vertikal=Y | Von oben gesehen, Z (Höhe) wird ignoriert |
-| **Frontansicht (XZ)** | horizontal=X, vertikal=Z | Von vorn gesehen, Y (Tiefe) wird ignoriert |
-| **Seitenansicht (YZ)** | horizontal=Y, vertikal=Z | Von der Seite gesehen, X (Breite) wird ignoriert |
-| **3D** (optional, später) | freie Kamera | OrbitControls für Rotation/Zoom |
+| Modus                     | Achsen-Mapping           | Beschreibung                                     |
+| ------------------------- | ------------------------ | ------------------------------------------------ |
+| **Draufsicht (XY)**       | horizontal=X, vertikal=Y | Von oben gesehen, Z (Höhe) wird ignoriert        |
+| **Frontansicht (XZ)**     | horizontal=X, vertikal=Z | Von vorn gesehen, Y (Tiefe) wird ignoriert       |
+| **Seitenansicht (YZ)**    | horizontal=Y, vertikal=Z | Von der Seite gesehen, X (Breite) wird ignoriert |
+| **3D** (optional, später) | freie Kamera             | OrbitControls für Rotation/Zoom                  |
 
 - Toggle merkt sich User-Wahl pro Seite (LocalStorage)
 - Live-Position und Trails verwenden denselben Modus — wechselt der User die Ansicht, ändern sich beide gleichzeitig
@@ -198,6 +207,7 @@ Wird auf Dashboard, History, Anchor-Kalibrierung und Setup-Wizard verwendet.
 **Erste Implementierung:** Draufsicht (XY) — alle anderen Modi sind Achsen-Swaps und damit minimaler Mehraufwand. 3D als letzte Ausbaustufe.
 
 **Empfohlene Library:**
+
 - 2D-Modi: natives Canvas oder [d3](https://d3js.org/) für Skalen/Achsen
 - 3D-Modus später: [threlte](https://threlte.xyz/) (Three.js für Svelte)
 
@@ -304,6 +314,7 @@ GET    /api/stream/positions   (Server-Sent Events)
 Solange das nicht da ist → klassisches Polling.
 
 **CORS:** Backend muss CORS-Header senden:
+
 ```
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
@@ -346,32 +357,32 @@ Access-Control-Allow-Headers: Content-Type
 
 ```svelte
 <script>
-  // ---- props ----
-  let { device } = $props();
+	// ---- props ----
+	let { device } = $props();
 </script>
 
 <div class="card">
-  <span class="dot" class:online={device.status === 'online'}></span>
-  {device.name}
+	<span class="dot" class:online={device.status === 'online'}></span>
+	{device.name}
 </div>
 
 <style>
-  .card {
-    background: var(--bg-secondary);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-  }
+	.card {
+		background: var(--bg-secondary);
+		padding: var(--space-4);
+		border-radius: var(--radius-md);
+	}
 
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-  }
+	.dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--text-muted);
+	}
 
-  .dot.online {
-    background: var(--status-online);
-  }
+	.dot.online {
+		background: var(--status-online);
+	}
 </style>
 ```
 
@@ -379,57 +390,57 @@ Access-Control-Allow-Headers: Content-Type
 
 ```css
 :root {
-  /* ---- backgrounds ---- */
-  --bg-primary:    #0B0F14;
-  --bg-secondary:  #131922;
-  --bg-tertiary:   #1B2330;
-  --border:        #2A3444;
-  --border-strong: #3D4A5E;
+	/* ---- backgrounds ---- */
+	--bg-primary: #0b0f14;
+	--bg-secondary: #131922;
+	--bg-tertiary: #1b2330;
+	--border: #2a3444;
+	--border-strong: #3d4a5e;
 
-  /* ---- text ---- */
-  --text-primary:   #E6EDF3;
-  --text-secondary: #9BA9B8;
-  --text-muted:     #5C6877;
+	/* ---- text ---- */
+	--text-primary: #e6edf3;
+	--text-secondary: #9ba9b8;
+	--text-muted: #5c6877;
 
-  /* ---- accent ---- */
-  --accent:        #4F8EFF;
-  --accent-hover:  #6BA0FF;
-  --accent-glow:   #4F8EFF33;
+	/* ---- accent ---- */
+	--accent: #4f8eff;
+	--accent-hover: #6ba0ff;
+	--accent-glow: #4f8eff33;
 
-  /* ---- status ---- */
-  --status-online:  #34D399;
-  --status-delayed: #FBBF24;
-  --status-offline: #EF4444;
+	/* ---- status ---- */
+	--status-online: #34d399;
+	--status-delayed: #fbbf24;
+	--status-offline: #ef4444;
 
-  /* ---- quality ---- */
-  --quality-good:   #34D399;
-  --quality-ok:     #FBBF24;
-  --quality-bad:    #EF4444;
+	/* ---- quality ---- */
+	--quality-good: #34d399;
+	--quality-ok: #fbbf24;
+	--quality-bad: #ef4444;
 
-  /* ---- spacing (4er-schritte) ---- */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-  --space-16: 64px;
+	/* ---- spacing (4er-schritte) ---- */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-12: 48px;
+	--space-16: 64px;
 
-  /* ---- radii ---- */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-full: 999px;
+	/* ---- radii ---- */
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-full: 999px;
 
-  /* ---- fonts ---- */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	/* ---- fonts ---- */
+	--font-sans: 'Inter', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 [data-theme='light'] {
-  --bg-primary: #FFFFFF;
-  /* ... usw. für Light-Theme */
+	--bg-primary: #ffffff;
+	/* ... usw. für Light-Theme */
 }
 ```
 
@@ -509,8 +520,8 @@ src/lib/components/
 
 ```svelte
 <script>
-  let count = $state(0);
-  let devices = $state([]);
+	let count = $state(0);
+	let devices = $state([]);
 </script>
 ```
 
@@ -518,7 +529,7 @@ src/lib/components/
 
 ```svelte
 <script>
-  let onlineCount = $derived(devices.filter(d => d.status === 'online').length);
+	let onlineCount = $derived(devices.filter((d) => d.status === 'online').length);
 </script>
 ```
 
@@ -526,10 +537,10 @@ src/lib/components/
 
 ```svelte
 <script>
-  $effect(() => {
-    const interval = setInterval(fetchPositions, 150);
-    return () => clearInterval(interval);
-  });
+	$effect(() => {
+		const interval = setInterval(fetchPositions, 150);
+		return () => clearInterval(interval);
+	});
 </script>
 ```
 
@@ -537,7 +548,7 @@ src/lib/components/
 
 ```svelte
 <script>
-  let { device, onSelect } = $props();
+	let { device, onSelect } = $props();
 </script>
 ```
 
@@ -545,7 +556,7 @@ src/lib/components/
 
 ```svelte
 <script>
-  let { value = $bindable(0) } = $props();
+	let { value = $bindable(0) } = $props();
 </script>
 ```
 
@@ -553,12 +564,12 @@ src/lib/components/
 
 ```svelte
 <script>
-  let { children, header } = $props();
+	let { children, header } = $props();
 </script>
 
 <div class="card">
-  {#if header}{@render header()}{/if}
-  {@render children()}
+	{#if header}{@render header()}{/if}
+	{@render children()}
 </div>
 ```
 
@@ -571,60 +582,78 @@ src/lib/components/
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script>
-  import { setContext } from 'svelte';
+	import { setContext } from 'svelte';
 
-  // ---- devices state ----
-  let devices = $state([]);
-  let devicesLoading = $state(false);
+	// ---- devices state ----
+	let devices = $state([]);
+	let devicesLoading = $state(false);
 
-  async function fetchDevices() {
-    devicesLoading = true;
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/devices`);
-      devices = (await res.json()).devices;
-    } finally {
-      devicesLoading = false;
-    }
-  }
+	async function fetchDevices() {
+		devicesLoading = true;
+		try {
+			const res = await fetch(`${import.meta.env.VITE_API_URL}/api/devices`);
+			devices = (await res.json()).devices;
+		} finally {
+			devicesLoading = false;
+		}
+	}
 
-  // ---- positions state ----
-  let positions = $state([]);
+	// ---- positions state ----
+	let positions = $state([]);
 
-  async function fetchPositions() {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/positions`);
-    positions = (await res.json()).positions;
-  }
+	async function fetchPositions() {
+		const res = await fetch(`${import.meta.env.VITE_API_URL}/api/positions`);
+		positions = (await res.json()).positions;
+	}
 
-  // ---- run state ----
-  let isRunning = $state(true);
+	// ---- run state ----
+	let isRunning = $state(true);
 
-  // ---- effects ----
-  $effect(() => {
-    if (!isRunning) return;
-    const interval = setInterval(fetchPositions, 150);
-    return () => clearInterval(interval);
-  });
+	// ---- effects ----
+	$effect(() => {
+		if (!isRunning) return;
+		const interval = setInterval(fetchPositions, 150);
+		return () => clearInterval(interval);
+	});
 
-  $effect(() => {
-    const interval = setInterval(fetchDevices, 2000);
-    return () => clearInterval(interval);
-  });
+	$effect(() => {
+		const interval = setInterval(fetchDevices, 2000);
+		return () => clearInterval(interval);
+	});
 
-  // ---- context ----
-  setContext('app', {
-    get devices() { return devices; },
-    get devicesLoading() { return devicesLoading; },
-    get anchors() { return devices.filter(d => d.type === 'anchor'); },
-    get tags() { return devices.filter(d => d.type === 'tag'); },
-    get positions() { return positions; },
-    get isRunning() { return isRunning; },
-    toggleRun: () => { isRunning = !isRunning; },
-    startRun:  () => { isRunning = true; },
-    stopRun:   () => { isRunning = false; },
-    refetchDevices: fetchDevices
-  });
+	// ---- context ----
+	setContext('app', {
+		get devices() {
+			return devices;
+		},
+		get devicesLoading() {
+			return devicesLoading;
+		},
+		get anchors() {
+			return devices.filter((d) => d.type === 'anchor');
+		},
+		get tags() {
+			return devices.filter((d) => d.type === 'tag');
+		},
+		get positions() {
+			return positions;
+		},
+		get isRunning() {
+			return isRunning;
+		},
+		toggleRun: () => {
+			isRunning = !isRunning;
+		},
+		startRun: () => {
+			isRunning = true;
+		},
+		stopRun: () => {
+			isRunning = false;
+		},
+		refetchDevices: fetchDevices
+	});
 
-  let { children } = $props();
+	let { children } = $props();
 </script>
 
 {@render children()}
@@ -637,11 +666,11 @@ src/lib/components/
 ```svelte
 <!-- src/routes/devices/+page.svelte -->
 <script>
-  import { getContext } from 'svelte';
-  import DeviceList from '$lib/components/device/DeviceList.svelte';
+	import { getContext } from 'svelte';
+	import DeviceList from '$lib/components/device/DeviceList.svelte';
 
-  // ---- context ----
-  const app = getContext('app');
+	// ---- context ----
+	const app = getContext('app');
 </script>
 
 <DeviceList devices={app.devices} loading={app.devicesLoading} />
@@ -650,13 +679,13 @@ src/lib/components/
 ```svelte
 <!-- src/lib/components/status/RunStateToggle.svelte -->
 <script>
-  import { getContext } from 'svelte';
-  const app = getContext('app');
+	import { getContext } from 'svelte';
+	const app = getContext('app');
 </script>
 
 <button class="toggle" class:running={app.isRunning} onclick={app.toggleRun}>
-  <span class="dot"></span>
-  {app.isRunning ? 'Läuft' : 'Gestoppt'}
+	<span class="dot"></span>
+	{app.isRunning ? 'Läuft' : 'Gestoppt'}
 </button>
 ```
 
@@ -671,15 +700,15 @@ Falls du logikartige Bausteine wiederverwenden willst (z.B. ein Polling-Hook), p
 ```svelte
 <!-- src/lib/components/util/Poller.svelte -->
 <script>
-  // ---- props ----
-  let { intervalMs, onTick, enabled = true } = $props();
+	// ---- props ----
+	let { intervalMs, onTick, enabled = true } = $props();
 
-  // ---- effects ----
-  $effect(() => {
-    if (!enabled) return;
-    const id = setInterval(onTick, intervalMs);
-    return () => clearInterval(id);
-  });
+	// ---- effects ----
+	$effect(() => {
+		if (!enabled) return;
+		const id = setInterval(onTick, intervalMs);
+		return () => clearInterval(id);
+	});
 </script>
 ```
 
@@ -731,12 +760,16 @@ Direkt in den Komponenten bzw. im Layout. Keine separate `client.js`. Wenn das R
 
 ```css
 .status-dot.online {
-  box-shadow: 0 0 0 0 var(--status-online);
-  animation: pulse 2s infinite;
+	box-shadow: 0 0 0 0 var(--status-online);
+	animation: pulse 2s infinite;
 }
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
-  70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+	0% {
+		box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5);
+	}
+	70% {
+		box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+	}
 }
 ```
 
@@ -779,42 +812,40 @@ let devices = $state([]);
 let loading = $state(false);
 
 // ---- actions ----
-async function fetchDevices() { }
-async function updateDevice(id) { }
+async function fetchDevices() {}
+async function updateDevice(id) {}
 
 // ---- effects ----
-$effect(() => { });
+$effect(() => {});
 ```
 
 ```svelte
 <script>
-  // ---- props ----
-  let { device, onSelect } = $props();
+	// ---- props ----
+	let { device, onSelect } = $props();
 
-  // ---- derived ----
-  let isOnline = $derived(device.status === 'online');
+	// ---- derived ----
+	let isOnline = $derived(device.status === 'online');
 </script>
 
 <!-- ---- header ---- -->
-<div class="header">
-</div>
+<div class="header"></div>
 
 <!-- ---- body ---- -->
-<div class="body">
-</div>
+<div class="body"></div>
 ```
 
 ### Verboten
 
 ```javascript
 // fetches all devices from the api
-async function fetchDevices() { }
+async function fetchDevices() {}
 
 /**
  * Fetches a single device by id.
  * @param id - the device id
  */
-async function getDevice(id) { }
+async function getDevice(id) {}
 ```
 
 ### Naming statt Kommentare
@@ -823,7 +854,8 @@ async function getDevice(id) { }
 const ageMs = Date.now() - device.lastSeen;
 
 const isLowQuality = residual > 0.5;
-if (isLowQuality) { }
+if (isLowQuality) {
+}
 ```
 
 ### Ausnahme
@@ -842,56 +874,58 @@ Da nur `.svelte` Dateien erlaubt sind, lebt der API-Client als **headless Kompon
 ```svelte
 <!-- src/lib/components/util/ApiClient.svelte -->
 <script>
-  import { setContext } from 'svelte';
+	import { setContext } from 'svelte';
 
-  // ---- props ----
-  let { children } = $props();
+	// ---- props ----
+	let { children } = $props();
 
-  // ---- config ----
-  const BASE = import.meta.env.VITE_API_URL;
+	// ---- config ----
+	const BASE = import.meta.env.VITE_API_URL;
 
-  // ---- core ----
-  async function request(path, init) {
-    const res = await fetch(`${BASE}${path}`, {
-      ...init,
-      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) }
-    });
-    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-    return res.json();
-  }
+	// ---- core ----
+	async function request(path, init) {
+		const res = await fetch(`${BASE}${path}`, {
+			...init,
+			headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) }
+		});
+		if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+		return res.json();
+	}
 
-  // ---- devices ----
-  const devices = {
-    list:   ()         => request('/api/devices'),
-    get:    (id)       => request(`/api/devices/${id}`),
-    update: (id, data) => request(`/api/devices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    remove: (id)       => request(`/api/devices/${id}`, { method: 'DELETE' })
-  };
+	// ---- devices ----
+	const devices = {
+		list: () => request('/api/devices'),
+		get: (id) => request(`/api/devices/${id}`),
+		update: (id, data) =>
+			request(`/api/devices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+		remove: (id) => request(`/api/devices/${id}`, { method: 'DELETE' })
+	};
 
-  // ---- anchors ----
-  const anchors = {
-    list:        ()             => request('/api/anchors'),
-    setPosition: (id, x, y, z)  => request(`/api/anchors/${id}/position`, {
-      method: 'PUT',
-      body: JSON.stringify({ x, y, z })
-    })
-  };
+	// ---- anchors ----
+	const anchors = {
+		list: () => request('/api/anchors'),
+		setPosition: (id, x, y, z) =>
+			request(`/api/anchors/${id}/position`, {
+				method: 'PUT',
+				body: JSON.stringify({ x, y, z })
+			})
+	};
 
-  // ---- positions ----
-  const positions = {
-    all:     ()                  => request('/api/positions'),
-    one:     (id)                => request(`/api/positions/${id}`),
-    history: (id, fromMs, toMs)  => request(`/api/positions/${id}/history?from=${fromMs}&to=${toMs}`)
-  };
+	// ---- positions ----
+	const positions = {
+		all: () => request('/api/positions'),
+		one: (id) => request(`/api/positions/${id}`),
+		history: (id, fromMs, toMs) => request(`/api/positions/${id}/history?from=${fromMs}&to=${toMs}`)
+	};
 
-  // ---- system ----
-  const system = {
-    health:   () => request('/api/health'),
-    routes:   () => request('/api'),
-    shutdown: () => request('/api/shutdown', { method: 'POST' })
-  };
+	// ---- system ----
+	const system = {
+		health: () => request('/api/health'),
+		routes: () => request('/api'),
+		shutdown: () => request('/api/shutdown', { method: 'POST' })
+	};
 
-  setContext('api', { request, devices, anchors, positions, system });
+	setContext('api', { request, devices, anchors, positions, system });
 </script>
 
 {@render children()}
@@ -902,12 +936,12 @@ Verwendung im Root-Layout:
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script>
-  import ApiClient from '$lib/components/util/ApiClient.svelte';
-  let { children } = $props();
+	import ApiClient from '$lib/components/util/ApiClient.svelte';
+	let { children } = $props();
 </script>
 
 <ApiClient>
-  {@render children()}
+	{@render children()}
 </ApiClient>
 ```
 
@@ -915,14 +949,14 @@ Zugriff in Page-Komponenten:
 
 ```svelte
 <script>
-  import { getContext } from 'svelte';
-  const api = getContext('api');
+	import { getContext } from 'svelte';
+	const api = getContext('api');
 
-  let devices = $state([]);
+	let devices = $state([]);
 
-  async function load() {
-    devices = (await api.devices.list()).devices;
-  }
+	async function load() {
+		devices = (await api.devices.list()).devices;
+	}
 </script>
 ```
 
@@ -956,15 +990,15 @@ Zugriff in Page-Komponenten:
 
 ## Empfohlene Libraries
 
-| Zweck | Empfehlung |
-|-------|------------|
-| 3D-Rendering (optional) | [threlte](https://threlte.xyz/) |
-| 2D-Canvas | natives Canvas oder [d3](https://d3js.org/) |
-| Charts/Zeitleiste | [Chart.js](https://www.chartjs.org/) oder [d3](https://d3js.org/) |
-| Color-Picker | natives `<input type="color">` |
-| Datepicker | selbst gebaut oder z.B. `flatpickr` |
-| Icons | [lucide-svelte](https://lucide.dev/) |
-| Relative Time | [dayjs](https://day.js.org/) mit `relativeTime`-Plugin |
+| Zweck                   | Empfehlung                                                        |
+| ----------------------- | ----------------------------------------------------------------- |
+| 3D-Rendering (optional) | [threlte](https://threlte.xyz/)                                   |
+| 2D-Canvas               | natives Canvas oder [d3](https://d3js.org/)                       |
+| Charts/Zeitleiste       | [Chart.js](https://www.chartjs.org/) oder [d3](https://d3js.org/) |
+| Color-Picker            | natives `<input type="color">`                                    |
+| Datepicker              | selbst gebaut oder z.B. `flatpickr`                               |
+| Icons                   | [lucide-svelte](https://lucide.dev/)                              |
+| Relative Time           | [dayjs](https://day.js.org/) mit `relativeTime`-Plugin            |
 
 ## Frontend-Konfiguration
 
@@ -1027,6 +1061,7 @@ node build   # läuft auf PORT (env-var, default 3000)
    - WLAN bricht ab, Pi muss manuell neu gestartet werden
 
 User-Optionen das gesamte System zu beenden:
+
 1. Frontend → Settings → "Erweitert" → "Server beenden" (mit Confirm-Dialog)
 2. SSH auf den Pi und `Ctrl+C` im laufenden `make run`
 3. Pi-Stromstecker ziehen

@@ -5,7 +5,15 @@
 	let { residual } = $props();
 
 	// ---- derived ----
-	let tone = $derived(residual === undefined ? 'neutral' : residual < 0.2 ? 'success' : residual < 0.5 ? 'warn' : 'danger');
+	let tone = $derived(
+		residual === undefined
+			? 'neutral'
+			: residual < 0.2
+				? 'success'
+				: residual < 0.5
+					? 'warn'
+					: 'danger'
+	);
 	let label = $derived(residual === undefined ? '–' : residual.toFixed(2) + 'm');
 </script>
 

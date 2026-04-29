@@ -29,14 +29,12 @@
 
 	let anchorsConfigured = $derived(
 		app.anchors.length > 0 &&
-			app.anchors.some(
-				(a) => a.position.x !== 0 || a.position.y !== 0 || a.position.z !== 0
-			)
+			app.anchors.some((a) => a.position.x !== 0 || a.position.y !== 0 || a.position.z !== 0)
 	);
 
 	let sortedDevices = $derived.by(() => {
-		const a = [...app.anchors].sort((x, y) => (x.lastSeen ?? 0) > (y.lastSeen ?? 0) ? -1 : 1);
-		const t = [...app.tags].sort((x, y) => (x.lastSeen ?? 0) > (y.lastSeen ?? 0) ? -1 : 1);
+		const a = [...app.anchors].sort((x, y) => ((x.lastSeen ?? 0) > (y.lastSeen ?? 0) ? -1 : 1));
+		const t = [...app.tags].sort((x, y) => ((x.lastSeen ?? 0) > (y.lastSeen ?? 0) ? -1 : 1));
 		return [...a, ...t];
 	});
 

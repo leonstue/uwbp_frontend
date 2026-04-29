@@ -13,7 +13,9 @@ export default [
 			}
 		},
 		rules: {
-			'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+			'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+			'svelte/prefer-svelte-reactivity': 'off',
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	},
 	{

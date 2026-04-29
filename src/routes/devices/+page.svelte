@@ -85,8 +85,8 @@
 {:else if app.devices.length === 0}
 	<Card>
 		<p class="empty">
-			Noch keine Geräte registriert. Schalte deine Anchors und Tags ein und prüfe die WLAN-Verbindung
-			zum Pi.
+			Noch keine Geräte registriert. Schalte deine Anchors und Tags ein und prüfe die
+			WLAN-Verbindung zum Pi.
 		</p>
 	</Card>
 {:else if filtered.length === 0}

@@ -45,14 +45,14 @@ Beim Echt-Betrieb sollte das Backend dieselbe Origin sein (Reverse-Proxy oder Pf
 
 ## Skripte
 
-| Befehl | Zweck |
-|---|---|
-| `npm run dev` | Vite Dev-Server |
-| `npm run build` | Production-Build (`build/`) |
-| `npm start` | Production-Server starten |
-| `npm run preview` | Build lokal testen |
-| `npm run lint` | Prettier + ESLint Check |
-| `npm run format` | Code formatieren |
+| Befehl            | Zweck                       |
+| ----------------- | --------------------------- |
+| `npm run dev`     | Vite Dev-Server             |
+| `npm run build`   | Production-Build (`build/`) |
+| `npm start`       | Production-Server starten   |
+| `npm run preview` | Build lokal testen          |
+| `npm run lint`    | Prettier + ESLint Check     |
+| `npm run format`  | Code formatieren            |
 
 ## Mock vs. Live
 

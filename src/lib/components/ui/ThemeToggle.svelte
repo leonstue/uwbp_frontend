@@ -31,7 +31,10 @@
 		border-radius: var(--radius-md);
 		background: var(--bg-secondary);
 		color: var(--text-primary);
-		transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+		transition:
+			background-color 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease;
 	}
 	.theme-toggle:hover {
 		background: var(--bg-tertiary);

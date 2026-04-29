@@ -3,7 +3,16 @@
 	let { children, tone = 'neutral', size = 'md' } = $props();
 </script>
 
-<span class="badge" class:t-neutral={tone === 'neutral'} class:t-accent={tone === 'accent'} class:t-success={tone === 'success'} class:t-warn={tone === 'warn'} class:t-danger={tone === 'danger'} class:s-sm={size === 'sm'} class:s-md={size === 'md'}>
+<span
+	class="badge"
+	class:t-neutral={tone === 'neutral'}
+	class:t-accent={tone === 'accent'}
+	class:t-success={tone === 'success'}
+	class:t-warn={tone === 'warn'}
+	class:t-danger={tone === 'danger'}
+	class:s-sm={size === 'sm'}
+	class:s-md={size === 'md'}
+>
 	{@render children()}
 </span>
 

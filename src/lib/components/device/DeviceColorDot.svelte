@@ -3,7 +3,13 @@
 	let { color = '#4F8EFF', size = 10, label } = $props();
 </script>
 
-<span class="dot" style:--dot-color={color} style:--dot-size="{size}px" aria-label={label} title={label}></span>
+<span
+	class="dot"
+	style:--dot-color={color}
+	style:--dot-size="{size}px"
+	aria-label={label}
+	title={label}
+></span>
 
 <style>
 	.dot {

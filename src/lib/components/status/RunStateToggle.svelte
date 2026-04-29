@@ -39,7 +39,9 @@
 		color: var(--text-secondary);
 		font-size: var(--text-xs);
 		font-weight: 500;
-		transition: color 150ms ease, border-color 150ms ease;
+		transition:
+			color 150ms ease,
+			border-color 150ms ease;
 	}
 	.toggle.running {
 		color: var(--status-online);

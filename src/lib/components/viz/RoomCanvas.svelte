@@ -238,7 +238,10 @@
 		ro.observe(wrapEl);
 		onResize();
 		const themeObserver = new MutationObserver(render);
-		themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+		themeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme']
+		});
 		return () => {
 			ro.disconnect();
 			themeObserver.disconnect();

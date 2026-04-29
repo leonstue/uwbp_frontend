@@ -1,7 +1,6 @@
 <script module>
 	export function drawGrid(ctx, transform, theme) {
 		const { worldMin, worldMax, scale, originX, originY } = transform;
-		const step = 1;
 		ctx.save();
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = theme.grid;

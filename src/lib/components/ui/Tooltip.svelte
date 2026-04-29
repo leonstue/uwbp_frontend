@@ -17,7 +17,12 @@
 >
 	{@render children()}
 	{#if visible}
-		<span class="tip" class:top={placement === 'top'} class:bottom={placement === 'bottom'} role="status">
+		<span
+			class="tip"
+			class:top={placement === 'top'}
+			class:bottom={placement === 'bottom'}
+			role="status"
+		>
 			{content}
 		</span>
 	{/if}

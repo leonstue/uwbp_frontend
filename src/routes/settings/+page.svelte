@@ -178,8 +178,8 @@
 		{#if advancedOpen}
 			<div class="warn-box">
 				<p>
-					<strong>Achtung:</strong> Server-Shutdown beendet den Backend-Prozess auf dem Pi. Das WLAN
-					bricht ab und das System muss manuell neu gestartet werden.
+					<strong>Achtung:</strong> Server-Shutdown beendet den Backend-Prozess auf dem Pi. Das WLAN bricht
+					ab und das System muss manuell neu gestartet werden.
 				</p>
 				<Button variant="danger" size="sm" onclick={() => (shutdownConfirm = true)}>
 					<Power size={14} /> Server beenden
