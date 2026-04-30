@@ -21,11 +21,17 @@
 
 	// ---- 3d lazy import ----
 	let Scene3D = $state(null);
+	let loadError = $state(null);
 	$effect(() => {
-		if (mode === '3d' && !Scene3D) {
-			import('./RoomScene3D.svelte').then((m) => {
-				Scene3D = m.default;
-			});
+		if (mode === '3d' && !Scene3D && !loadError) {
+			import('./RoomScene3D.svelte')
+				.then((m) => {
+					Scene3D = m.default;
+				})
+				.catch((e) => {
+					loadError = String(e?.message ?? e);
+					console.error('3D scene failed to load:', e);
+				});
 		}
 	});
 
@@ -173,13 +179,16 @@
 	function onResize() {
 		if (!wrapEl || !canvasEl) return;
 		const rect = wrapEl.getBoundingClientRect();
-		width = rect.width;
-		height = Math.max(minHeight, rect.width * 0.6);
+		const newWidth = Math.round(rect.width);
+		const newHeight = Math.round(Math.max(minHeight, rect.width * 0.6));
+		if (newWidth === width && newHeight === height && dpr === (window.devicePixelRatio || 1)) {
+			return;
+		}
+		width = newWidth;
+		height = newHeight;
 		dpr = window.devicePixelRatio || 1;
 		canvasEl.width = width * dpr;
 		canvasEl.height = height * dpr;
-		canvasEl.style.width = `${width}px`;
-		canvasEl.style.height = `${height}px`;
 		render();
 	}
 
@@ -272,16 +281,24 @@
 </script>
 
 {#if mode === '3d'}
-	<div class="wrap" style:min-height="{minHeight}px">
+	<div class="wrap" style:height="{minHeight}px">
 		{#if Scene3D}
 			<Scene3D {anchors} {tags} {positions} {tagHistory} {cursorTs} {minHeight} />
+		{:else if loadError}
+			<div class="loading err">3D-Ansicht konnte nicht geladen werden: {loadError}</div>
 		{:else}
 			<div class="loading">3D-Ansicht wird geladen …</div>
 		{/if}
 	</div>
 {:else}
-	<div class="wrap" bind:this={wrapEl} style:min-height="{minHeight}px">
-		<canvas bind:this={canvasEl} onmousemove={onMove} onmouseleave={onLeave}></canvas>
+	<div class="wrap" bind:this={wrapEl} style:height="{height}px">
+		<canvas
+			bind:this={canvasEl}
+			onmousemove={onMove}
+			onmouseleave={onLeave}
+			style:width="{width}px"
+			style:height="{height}px"
+		></canvas>
 	</div>
 {/if}
 
@@ -296,8 +313,6 @@
 	}
 	canvas {
 		display: block;
-		width: 100%;
-		height: 100%;
 	}
 	.loading {
 		display: flex;
