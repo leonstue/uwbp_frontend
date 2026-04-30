@@ -55,15 +55,30 @@
 
 	let range = $derived(frozenRange ?? liveRange());
 
+	const TRAIL_MIN_DIST_M = 0.04;
+
 	let trails = $derived.by(() => {
 		const out = [];
+		const minDistSq = TRAIL_MIN_DIST_M * TRAIL_MIN_DIST_M;
 		for (const tag of app.tags) {
 			if (!selectedTagIds.has(tag.id)) continue;
 			const entries = trailsData.get(tag.id) ?? [];
+			const filtered = [];
+			let last = null;
+			for (const e of entries) {
+				if (last) {
+					const dx = e.position.x - last.position.x;
+					const dy = e.position.y - last.position.y;
+					const dz = e.position.z - last.position.z;
+					if (dx * dx + dy * dy + dz * dz < minDistSq) continue;
+				}
+				filtered.push(e);
+				last = e;
+			}
 			out.push({
 				tagId: tag.id,
 				color: tag.color,
-				points: entries
+				points: filtered
 			});
 		}
 		return out;
