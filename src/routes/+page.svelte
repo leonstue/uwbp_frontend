@@ -12,6 +12,9 @@
 	import DeviceColorDot from '$lib/components/device/DeviceColorDot.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import PlaybackControls from '$lib/components/util/PlaybackControls.svelte';
+	import History from 'lucide-svelte/icons/history';
+	import Radio from 'lucide-svelte/icons/radio';
 
 	// ---- context ----
 	const app = getContext('app');
@@ -19,6 +22,13 @@
 	// ---- state ----
 	let mode = $state('xy');
 	let didCheckSetup = $state(false);
+	let scrubbing = $state(false);
+	let cursorTs = $state(null);
+	let scrubWindowSec = $state(60);
+	let playing = $state(false);
+	let speed = $state(1);
+	let raf;
+	let lastFrameAt = 0;
 
 	// ---- derived ----
 	let positionsByTag = $derived.by(() => {
@@ -38,6 +48,63 @@
 		return [...a, ...t];
 	});
 
+	let scrubFrom = $derived(Date.now() - scrubWindowSec * 1000);
+	let scrubTo = $derived(Date.now());
+
+	let activeCursor = $derived(scrubbing ? cursorTs : null);
+
+	let scrubbedTagPositions = $derived.by(() => {
+		if (!scrubbing || cursorTs === null) return null;
+		const out = [];
+		for (const tag of app.tags) {
+			const entries = app.tagHistory.get?.(tag.id) ?? [];
+			let cursor = null;
+			for (const e of entries) {
+				if (e.timestamp <= cursorTs) cursor = e;
+				else break;
+			}
+			if (cursor) out.push({ tagId: tag.id, position: cursor.position, residual: cursor.residual });
+		}
+		return out;
+	});
+
+	let displayPositions = $derived(scrubbedTagPositions ?? app.positions);
+
+	// ---- actions ----
+	function startScrub() {
+		scrubbing = true;
+		cursorTs = Date.now() - 5000;
+	}
+
+	function stopScrub() {
+		scrubbing = false;
+		playing = false;
+		cursorTs = null;
+	}
+
+	function tick(now) {
+		if (!playing) return;
+		const dt = lastFrameAt ? now - lastFrameAt : 0;
+		lastFrameAt = now;
+		const span = scrubTo - scrubFrom;
+		const next = (cursorTs ?? scrubFrom) + dt * speed;
+		if (next >= scrubTo) {
+			cursorTs = scrubFrom;
+		} else {
+			cursorTs = next;
+		}
+		void span;
+		raf = requestAnimationFrame(tick);
+	}
+
+	$effect(() => {
+		if (playing) {
+			lastFrameAt = 0;
+			raf = requestAnimationFrame(tick);
+			return () => cancelAnimationFrame(raf);
+		}
+	});
+
 	// ---- mount: setup-redirect ----
 	onMount(() => {
 		setTimeout(() => {
@@ -47,6 +114,13 @@
 			}
 		}, 1500);
 	});
+
+	const windowOptions = [
+		{ s: 30, label: '30s' },
+		{ s: 60, label: '1m' },
+		{ s: 300, label: '5m' },
+		{ s: 600, label: '10m' }
+	];
 </script>
 
 <PageHeader title="Dashboard" subtitle="Echtzeit-Übersicht über Anchors und Tags">
@@ -80,16 +154,85 @@
 <div class="dash">
 	<div class="viz">
 		<div class="viz-head">
-			<span class="lbl">Live</span>
-			<ViewToggle bind:mode storageKey="dashboard" />
+			<span class="lbl">{scrubbing ? 'Replay' : 'Live'}</span>
+			<ViewToggle bind:mode storageKey="dashboard" allow3d />
 		</div>
 		<RoomCanvas
 			anchors={app.anchors}
 			tags={app.tags}
-			positions={app.positions}
+			positions={displayPositions}
+			tagHistory={app.tagHistory}
+			cursorTs={activeCursor}
 			{mode}
 			minHeight={460}
 		/>
+
+		<div class="scrub" class:open={scrubbing}>
+			<div class="scrub-head">
+				{#if !scrubbing}
+					<Button
+						variant="secondary"
+						size="sm"
+						onclick={startScrub}
+						disabled={app.tags.length === 0}
+					>
+						<History size={14} /> Zeitschieber
+					</Button>
+				{:else}
+					<div class="row">
+						<span class="lbl">Fenster</span>
+						<div class="windows">
+							{#each windowOptions as opt (opt.s)}
+								<button
+									type="button"
+									class="win"
+									class:active={scrubWindowSec === opt.s}
+									onclick={() => (scrubWindowSec = opt.s)}
+								>
+									{opt.label}
+								</button>
+							{/each}
+						</div>
+					</div>
+					<Button variant="ghost" size="sm" onclick={stopScrub}>
+						<Radio size={14} /> Zurück zu Live
+					</Button>
+				{/if}
+			</div>
+
+			{#if scrubbing}
+				<div class="slider-row">
+					<input
+						class="slider"
+						type="range"
+						min={scrubFrom}
+						max={scrubTo}
+						step="100"
+						bind:value={cursorTs}
+					/>
+				</div>
+				<div class="ts mono">
+					<span>−{scrubWindowSec}s</span>
+					<span>
+						{cursorTs ? new Date(cursorTs).toLocaleTimeString('de-DE') : '–'}
+						<span class="muted">
+							(−{Math.max(0, Math.round((Date.now() - (cursorTs ?? Date.now())) / 1000))}s)
+						</span>
+					</span>
+					<span>jetzt</span>
+				</div>
+				<PlaybackControls
+					bind:playing
+					bind:speed
+					onStop={() => {
+						cursorTs = scrubFrom;
+					}}
+				/>
+				<p class="hint">
+					Daten kommen aus dem Live-Buffer der letzten {app.historyBufferSeconds}s.
+				</p>
+			{/if}
+		</div>
 	</div>
 
 	<aside class="alive">
@@ -230,5 +373,67 @@
 	.warn {
 		margin: 0;
 		color: var(--status-delayed);
+	}
+	.scrub {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		padding: var(--space-3);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+	}
+	.scrub.open {
+		border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+	}
+	.scrub-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+	.row {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.windows {
+		display: inline-flex;
+		gap: 2px;
+		padding: 2px;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
+	}
+	.win {
+		padding: 4px 10px;
+		border-radius: var(--radius-sm);
+		color: var(--text-secondary);
+		font-size: var(--text-xs);
+		font-weight: 500;
+	}
+	.win.active {
+		background: var(--bg-secondary);
+		color: var(--accent);
+	}
+	.slider-row {
+		display: flex;
+	}
+	.slider {
+		width: 100%;
+	}
+	.ts {
+		display: flex;
+		justify-content: space-between;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+	}
+	.muted {
+		color: var(--text-muted);
+	}
+	.hint {
+		margin: 0;
+		font-size: 11px;
+		color: var(--text-muted);
 	}
 </style>

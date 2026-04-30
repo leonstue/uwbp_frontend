@@ -26,8 +26,11 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@threlte/core": "^8.5.11",
+		"@threlte/extras": "^9.15.0",
 		"dayjs": "^1.11.20",
 		"flatpickr": "^4.6.13",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"three": "^0.184.0"
 	}
 }

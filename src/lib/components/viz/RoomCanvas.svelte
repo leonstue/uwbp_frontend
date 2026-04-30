@@ -15,8 +15,19 @@
 		mode = 'xy',
 		cursorTs = null,
 		showTrailFade = false,
-		minHeight = 360
+		minHeight = 360,
+		tagHistory = null
 	} = $props();
+
+	// ---- 3d lazy import ----
+	let Scene3D = $state(null);
+	$effect(() => {
+		if (mode === '3d' && !Scene3D) {
+			import('./RoomScene3D.svelte').then((m) => {
+				Scene3D = m.default;
+			});
+		}
+	});
 
 	// ---- state ----
 	let canvasEl;
@@ -260,9 +271,19 @@
 	});
 </script>
 
-<div class="wrap" bind:this={wrapEl} style:min-height="{minHeight}px">
-	<canvas bind:this={canvasEl} onmousemove={onMove} onmouseleave={onLeave}></canvas>
-</div>
+{#if mode === '3d'}
+	<div class="wrap" style:min-height="{minHeight}px">
+		{#if Scene3D}
+			<Scene3D {anchors} {tags} {positions} {tagHistory} {cursorTs} {minHeight} />
+		{:else}
+			<div class="loading">3D-Ansicht wird geladen …</div>
+		{/if}
+	</div>
+{:else}
+	<div class="wrap" bind:this={wrapEl} style:min-height="{minHeight}px">
+		<canvas bind:this={canvasEl} onmousemove={onMove} onmouseleave={onLeave}></canvas>
+	</div>
+{/if}
 
 <style>
 	.wrap {
@@ -277,5 +298,14 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+	}
+	.loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		min-height: inherit;
+		color: var(--text-muted);
+		font-size: var(--text-sm);
 	}
 </style>

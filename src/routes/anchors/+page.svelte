@@ -164,7 +164,7 @@
 	<div class="preview">
 		<div class="preview-head">
 			<span class="lbl">Vorschau</span>
-			<ViewToggle bind:mode storageKey="anchors" />
+			<ViewToggle bind:mode storageKey="anchors" allow3d />
 		</div>
 		<RoomCanvas anchors={previewAnchors} {mode} minHeight={420} />
 	</div>

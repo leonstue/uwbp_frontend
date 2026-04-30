@@ -201,7 +201,7 @@
 	<div class="viz">
 		<div class="viz-head">
 			<span class="lbl">Trail-Vorschau</span>
-			<ViewToggle bind:mode storageKey="history" />
+			<ViewToggle bind:mode storageKey="history" allow3d />
 		</div>
 		<RoomCanvas
 			anchors={app.anchors}
