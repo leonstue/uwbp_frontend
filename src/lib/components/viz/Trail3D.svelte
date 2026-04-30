@@ -11,7 +11,7 @@
 	} from 'three';
 
 	// ---- props ----
-	let { points = [], color = '#4F8EFF' } = $props();
+	let { points = [], color = '#4F8EFF', cursorTs = null } = $props();
 
 	// ---- state ----
 	const geometry = new BufferGeometry();
@@ -25,7 +25,8 @@
 	const baseColor = new Color();
 
 	function rebuild() {
-		const n = points.length;
+		const visible = cursorTs !== null ? points.filter((p) => p.timestamp <= cursorTs) : points;
+		const n = visible.length;
 		if (n < 2) {
 			geometry.setAttribute('position', new Float32BufferAttribute([], 3));
 			geometry.setAttribute('color', new Float32BufferAttribute([], 3));
@@ -33,22 +34,22 @@
 			return;
 		}
 		baseColor.set(color);
-		const now = Date.now();
-		const oldest = points[0]?.timestamp ?? now;
-		const span = Math.max(500, now - oldest);
+		const ref = cursorTs !== null ? cursorTs : Date.now();
+		const oldest = visible[0]?.timestamp ?? ref;
+		const span = Math.max(500, ref - oldest);
 
 		const positions = new Float32Array(n * 3);
 		const colors = new Float32Array(n * 3);
 		for (let i = 0; i < n; i++) {
-			const p = points[i];
+			const p = visible[i];
 			positions[i * 3 + 0] = p.position.x;
 			positions[i * 3 + 1] = p.position.z;
 			positions[i * 3 + 2] = -p.position.y;
 
-			const age = now - p.timestamp;
+			const age = ref - p.timestamp;
 			let t = 1 - age / span;
 			if (i > 0) {
-				const prev = points[i - 1];
+				const prev = visible[i - 1];
 				const dx = p.position.x - prev.position.x;
 				const dy = p.position.y - prev.position.y;
 				const dz = p.position.z - prev.position.z;
@@ -73,6 +74,7 @@
 	$effect(() => {
 		void points;
 		void color;
+		void cursorTs;
 		rebuild();
 	});
 

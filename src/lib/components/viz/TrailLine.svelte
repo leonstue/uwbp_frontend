@@ -6,16 +6,23 @@
 		ctx.lineJoin = 'round';
 		ctx.lineCap = 'round';
 
-		const oldest = points[0]?.ts ?? now;
-		const span = Math.max(500, now - oldest);
+		const visible = highlightTs !== null ? points.filter((p) => p.ts <= highlightTs) : points;
+		if (visible.length < 1) {
+			ctx.restore();
+			return;
+		}
 
-		for (let i = 1; i < points.length; i++) {
-			const a = points[i - 1];
-			const b = points[i];
+		const oldest = visible[0]?.ts ?? now;
+		const ref = highlightTs !== null ? highlightTs : now;
+		const span = Math.max(500, ref - oldest);
+
+		for (let i = 1; i < visible.length; i++) {
+			const a = visible[i - 1];
+			const b = visible[i];
 			let alpha = 1;
 			let lineW = 1.5;
 			if (fadeFromAge) {
-				const age = now - b.ts;
+				const age = ref - b.ts;
 				const t = 1 - age / span;
 				alpha = Math.max(0.05, t);
 				lineW = 1 + 1.5 * t;
@@ -40,11 +47,7 @@
 		}
 
 		if (highlightTs !== null) {
-			let cursor = points[0];
-			for (const p of points) {
-				if (p.ts <= highlightTs) cursor = p;
-				else break;
-			}
+			const cursor = visible[visible.length - 1];
 			ctx.globalAlpha = 1;
 			ctx.fillStyle = color;
 			ctx.beginPath();

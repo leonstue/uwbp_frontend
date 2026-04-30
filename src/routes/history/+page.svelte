@@ -1,5 +1,5 @@
 <script>
-	import { getContext, untrack } from 'svelte';
+	import { getContext, untrack, onMount } from 'svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -93,25 +93,26 @@
 	}
 
 	async function loadTrails() {
-		if (selectedTagIds.size === 0) {
-			trailsData = new Map();
-			return;
-		}
+		if (!frozenRange) return;
 		loading = true;
 		try {
-			const out = new Map();
+			const out = new Map(trailsData);
+			const ids = [...selectedTagIds];
 			await Promise.all(
-				[...selectedTagIds].map(async (id) => {
+				ids.map(async (id) => {
+					if (out.has(id)) return;
 					try {
-						const res = await api.positions.history(id, range.from, range.to);
+						const res = await api.positions.history(id, frozenRange.from, frozenRange.to);
 						out.set(id, res.history ?? []);
 					} catch (e) {
 						toast.push({ type: 'error', message: `History ${id}: ${e.message}` });
 					}
 				})
 			);
+			for (const id of [...out.keys()]) {
+				if (!selectedTagIds.has(id)) out.delete(id);
+			}
 			trailsData = out;
-			cursorTs = range.from;
 		} finally {
 			loading = false;
 		}
@@ -174,14 +175,21 @@
 
 	$effect(() => {
 		void selectedTagIds;
-		untrack(() => refresh());
+		untrack(() => loadTrails());
 	});
 
 	function refresh() {
 		frozenRange = liveRange();
 		dirty = false;
+		trailsData = new Map();
+		cursorTs = frozenRange.from;
 		loadTrails();
 	}
+
+	onMount(() => {
+		frozenRange = liveRange();
+		cursorTs = frozenRange.from;
+	});
 </script>
 
 <PageHeader title="History" subtitle="Bewegungs-Trails der Tags zeitlich analysieren">
@@ -233,7 +241,6 @@
 
 	<div class="viz">
 		<div class="viz-head">
-			<span class="lbl">Trail-Vorschau</span>
 			<ViewToggle bind:mode storageKey="history" allow3d />
 		</div>
 		<RoomCanvas
@@ -253,7 +260,6 @@
 				max={range.to}
 				step="100"
 				bind:value={cursorTs}
-				disabled={!trailsData.size}
 			/>
 			<div class="ts mono">
 				<span>{new Date(range.from).toLocaleTimeString('de-DE')}</span>

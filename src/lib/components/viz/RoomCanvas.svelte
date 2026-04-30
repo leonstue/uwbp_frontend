@@ -74,6 +74,11 @@
 			...anchors.map((a) => project(a.position, mode)),
 			...positions.map((p) => project(p.position, mode))
 		];
+		for (const trail of trails) {
+			for (const pt of trail.points ?? []) {
+				projected.push(project(pt.position, mode));
+			}
+		}
 		let minH = -1;
 		let maxH = 6;
 		let minV = -1;
@@ -84,7 +89,8 @@
 			minV = Math.min(...projected.map((p) => p.v));
 			maxV = Math.max(...projected.map((p) => p.v));
 		}
-		const padding = 1;
+		const baseSize = Math.max(maxH - minH, maxV - minV, 2);
+		const padding = Math.max(0.6, baseSize * 0.15);
 		minH -= padding;
 		maxH += padding;
 		minV -= padding;

@@ -99,7 +99,7 @@
 		<T.AxesHelper args={axesArgs} />
 
 		{#each trails as trail (trail.tagId)}
-			<Trail3D points={trail.points} color={trail.color} />
+			<Trail3D points={trail.points} color={trail.color} {cursorTs} />
 		{/each}
 
 		{#each anchors as a (a.id)}
