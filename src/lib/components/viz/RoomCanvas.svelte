@@ -19,6 +19,13 @@
 		tagHistory = null
 	} = $props();
 
+	// ---- derived ----
+	let isEmpty = $derived(
+		anchors.length === 0 &&
+			tags.length === 0 &&
+			(!trails || trails.every((t) => !t.points || t.points.length === 0))
+	);
+
 	// ---- 3d lazy import ----
 	let Scene3D = $state(null);
 	let loadError = $state(null);
@@ -302,6 +309,14 @@
 		});
 		ro.observe(wrapEl);
 		untrack(() => onResize());
+		const settle1 = requestAnimationFrame(() => {
+			onResize();
+			needsRender = true;
+		});
+		const settle2 = setTimeout(() => {
+			onResize();
+			needsRender = true;
+		}, 50);
 		const themeObserver = new MutationObserver(() => (needsRender = true));
 		themeObserver.observe(document.documentElement, {
 			attributes: true,
@@ -322,6 +337,8 @@
 			ro.disconnect();
 			themeObserver.disconnect();
 			cancelAnimationFrame(raf);
+			cancelAnimationFrame(settle1);
+			clearTimeout(settle2);
 		};
 	});
 
@@ -338,7 +355,11 @@
 	});
 </script>
 
-{#if mode === '3d'}
+{#if isEmpty}
+	<div class="wrap empty-wrap" style:height="{minHeight}px">
+		<div class="empty">Keine Geräte vorhanden</div>
+	</div>
+{:else if mode === '3d'}
 	<div class="wrap" style:height="{minHeight}px">
 		{#if Scene3D}
 			<Scene3D {anchors} {tags} {positions} {trails} {tagHistory} {cursorTs} {minHeight} />
@@ -368,7 +389,8 @@
 		width: 100%;
 		height: 100%;
 	}
-	.loading {
+	.loading,
+	.empty {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -376,5 +398,8 @@
 		min-height: inherit;
 		color: var(--text-muted);
 		font-size: var(--text-sm);
+	}
+	.empty-wrap {
+		border-style: dashed;
 	}
 </style>
