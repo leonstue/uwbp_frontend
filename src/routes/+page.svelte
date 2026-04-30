@@ -41,15 +41,30 @@
 		return [...a, ...t];
 	});
 
+	const TRAIL_MIN_DIST_M = 0.04;
+
 	let liveTrails = $derived.by(() => {
 		if (!trailEnabled) return [];
 		const cutoff = Date.now() - trailWindowSec * 1000;
+		const minDistSq = TRAIL_MIN_DIST_M * TRAIL_MIN_DIST_M;
 		const out = [];
 		for (const tag of app.tags) {
 			const entries = app.tagHistory.get?.(tag.id) ?? [];
-			const points = entries.filter((e) => e.timestamp >= cutoff);
-			if (points.length > 1) {
-				out.push({ tagId: tag.id, color: tag.color, points });
+			const filtered = [];
+			let last = null;
+			for (const e of entries) {
+				if (e.timestamp < cutoff) continue;
+				if (last) {
+					const dx = e.position.x - last.position.x;
+					const dy = e.position.y - last.position.y;
+					const dz = e.position.z - last.position.z;
+					if (dx * dx + dy * dy + dz * dz < minDistSq) continue;
+				}
+				filtered.push(e);
+				last = e;
+			}
+			if (filtered.length > 1) {
+				out.push({ tagId: tag.id, color: tag.color, points: filtered });
 			}
 		}
 		return out;
