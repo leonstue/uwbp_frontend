@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Canvas, T } from '@threlte/core';
 	import { OrbitControls } from '@threlte/extras';
+	import Trail3D from './Trail3D.svelte';
 
 	// ---- props ----
 	let {
@@ -10,6 +11,7 @@
 		positions = [],
 		tagHistory = null,
 		cursorTs = null,
+		trails = [],
 		minHeight = 460
 	} = $props();
 
@@ -95,6 +97,10 @@
 
 		<T.GridHelper args={gridArgs} />
 		<T.AxesHelper args={axesArgs} />
+
+		{#each trails as trail (trail.tagId)}
+			<Trail3D points={trail.points} color={trail.color} />
+		{/each}
 
 		{#each anchors as a (a.id)}
 			<T.Mesh position={[a.position.x, a.position.z, -a.position.y]}>

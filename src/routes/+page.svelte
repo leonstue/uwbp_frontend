@@ -20,7 +20,7 @@
 	let mode = $state('xy');
 	let didCheckSetup = $state(false);
 	let trailEnabled = $state(false);
-	let trailWindowSec = $state(15);
+	let trailWindowSec = $state(3);
 
 	// ---- derived ----
 	let positionsByTag = $derived.by(() => {

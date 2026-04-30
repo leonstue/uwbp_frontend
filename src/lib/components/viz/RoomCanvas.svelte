@@ -335,7 +335,7 @@
 {#if mode === '3d'}
 	<div class="wrap" style:height="{minHeight}px">
 		{#if Scene3D}
-			<Scene3D {anchors} {tags} {positions} {tagHistory} {cursorTs} {minHeight} />
+			<Scene3D {anchors} {tags} {positions} {trails} {tagHistory} {cursorTs} {minHeight} />
 		{:else if loadError}
 			<div class="loading err">3D-Ansicht konnte nicht geladen werden: {loadError}</div>
 		{:else}
