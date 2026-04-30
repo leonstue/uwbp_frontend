@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import { drawGrid } from './GridLayer.svelte';
 	import { drawAxisLabels } from './AxisLabels.svelte';
 	import { drawAnchor } from './AnchorMarker.svelte';
@@ -253,7 +252,8 @@
 	}
 
 	// ---- mount/effects ----
-	onMount(() => {
+	$effect(() => {
+		if (mode === '3d' || !wrapEl) return;
 		const ro = new ResizeObserver(onResize);
 		ro.observe(wrapEl);
 		onResize();
@@ -276,7 +276,7 @@
 		void mode;
 		void cursorTs;
 		void showTrailFade;
-		render();
+		if (mode !== '3d') render();
 	});
 </script>
 
