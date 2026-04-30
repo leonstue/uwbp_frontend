@@ -28,20 +28,6 @@
 	let roomD = $state(4);
 	let roomH = $state(2.5);
 
-	// ---- effects ----
-	$effect(() => {
-		const next = new Map(drafts);
-		for (const a of app.anchors) {
-			if (!next.has(a.id)) {
-				next.set(a.id, { ...a.position });
-			}
-		}
-		for (const id of next.keys()) {
-			if (!app.anchors.find((a) => a.id === id)) next.delete(id);
-		}
-		drafts = next;
-	});
-
 	// ---- derived ----
 	let previewAnchors = $derived(
 		app.anchors.map((a) => ({ ...a, position: drafts.get(a.id) ?? a.position }))
@@ -50,13 +36,14 @@
 	let duplicates = $derived.by(() => {
 		const seen = new Map();
 		const dupes = new Set();
-		for (const [id, pos] of drafts) {
-			const key = `${pos.x.toFixed(3)}|${pos.y.toFixed(3)}|${pos.z.toFixed(3)}`;
+		for (const a of previewAnchors) {
+			const p = a.position;
+			const key = `${p.x.toFixed(3)}|${p.y.toFixed(3)}|${p.z.toFixed(3)}`;
 			if (seen.has(key)) {
-				dupes.add(id);
+				dupes.add(a.id);
 				dupes.add(seen.get(key));
 			} else {
-				seen.set(key, id);
+				seen.set(key, a.id);
 			}
 		}
 		return dupes;

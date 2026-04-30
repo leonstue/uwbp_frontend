@@ -36,15 +36,6 @@
 		return true;
 	});
 
-	// ---- effects: keep drafts in sync ----
-	$effect(() => {
-		const next = new Map(drafts);
-		for (const a of app.anchors) {
-			if (!next.has(a.id)) next.set(a.id, { ...a.position });
-		}
-		drafts = next;
-	});
-
 	let previewAnchors = $derived(
 		app.anchors.map((a) => ({ ...a, position: drafts.get(a.id) ?? a.position }))
 	);
