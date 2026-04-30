@@ -57,6 +57,55 @@
 
 	const TRAIL_MIN_DIST_M = 0.04;
 
+	const ACTIVITY_BUCKETS = 120;
+
+	let activityRows = $derived.by(() => {
+		if (!frozenRange) return [];
+		const span = frozenRange.to - frozenRange.from;
+		if (span <= 0) return [];
+		const out = [];
+		for (const tag of app.tags) {
+			if (!selectedTagIds.has(tag.id)) continue;
+			const entries = trailsData.get(tag.id) ?? [];
+			const buckets = new Array(ACTIVITY_BUCKETS).fill(0);
+			const present = new Array(ACTIVITY_BUCKETS).fill(false);
+			let prev = null;
+			for (const e of entries) {
+				if (e.timestamp < frozenRange.from || e.timestamp > frozenRange.to) continue;
+				const idx = Math.min(
+					ACTIVITY_BUCKETS - 1,
+					Math.floor(((e.timestamp - frozenRange.from) / span) * ACTIVITY_BUCKETS)
+				);
+				present[idx] = true;
+				if (prev) {
+					const dx = e.position.x - prev.position.x;
+					const dy = e.position.y - prev.position.y;
+					const dz = e.position.z - prev.position.z;
+					buckets[idx] += Math.sqrt(dx * dx + dy * dy + dz * dz);
+				}
+				prev = e;
+			}
+			const max = Math.max(0.001, ...buckets);
+			out.push({
+				tagId: tag.id,
+				color: tag.color,
+				name: tag.name,
+				buckets: buckets.map((v, i) => ({
+					norm: v / max,
+					present: present[i]
+				}))
+			});
+		}
+		return out;
+	});
+
+	function jumpFromActivity(e) {
+		if (!frozenRange) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		cursorTs = frozenRange.from + t * (frozenRange.to - frozenRange.from);
+	}
+
 	let trails = $derived.by(() => {
 		const out = [];
 		const minDistSq = TRAIL_MIN_DIST_M * TRAIL_MIN_DIST_M;
@@ -253,6 +302,30 @@
 			minHeight={420}
 		/>
 		<div class="timeline">
+			{#if activityRows.length > 0}
+				{@const cursorPct =
+					range.to > range.from
+						? Math.max(0, Math.min(1, ((cursorTs ?? range.from) - range.from) / (range.to - range.from)))
+						: 0}
+				<div
+					class="activity"
+					role="presentation"
+					onclick={jumpFromActivity}
+				>
+					<span class="cursor-line" style:left="{cursorPct * 100}%"></span>
+					{#each activityRows as row (row.tagId)}
+						<div class="act-row" style:--c={row.color} title={row.name}>
+							{#each row.buckets as b, i (i)}
+								<span
+									class="bucket"
+									class:present={b.present}
+									style:--h="{Math.max(b.present ? 0.18 : 0, b.norm) * 100}%"
+								></span>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/if}
 			<input
 				class="slider"
 				type="range"
@@ -350,6 +423,45 @@
 	}
 	.slider {
 		width: 100%;
+	}
+	.activity {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		padding: 2px 0;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		user-select: none;
+	}
+	.act-row {
+		display: flex;
+		align-items: flex-end;
+		height: 16px;
+		gap: 1px;
+	}
+	.bucket {
+		flex: 1;
+		min-width: 1px;
+		background: var(--c);
+		opacity: 0.15;
+		height: var(--h, 0%);
+		border-radius: 1px;
+		transition: opacity 120ms ease;
+	}
+	.bucket.present {
+		opacity: 0.85;
+	}
+	.cursor-line {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: var(--text-primary);
+		opacity: 0.6;
+		pointer-events: none;
+		transform: translateX(-50%);
 	}
 	.ts {
 		display: flex;
