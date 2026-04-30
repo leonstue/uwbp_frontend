@@ -8,6 +8,7 @@
 	import RoomCanvas from '$lib/components/viz/RoomCanvas.svelte';
 	import ViewToggle from '$lib/components/viz/ViewToggle.svelte';
 	import DeviceColorDot from '$lib/components/device/DeviceColorDot.svelte';
+	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import PlaybackControls from '$lib/components/util/PlaybackControls.svelte';
 	import Download from 'lucide-svelte/icons/download';
 
@@ -191,15 +192,15 @@
 				<span class="lbl">Tags</span>
 				<div class="tags">
 					{#each app.tags as tag (tag.id)}
-						<label class="tag-row">
-							<input
-								type="checkbox"
+						<div class="tag-row">
+							<Toggle
 								checked={selectedTagIds.has(tag.id)}
 								onchange={() => toggleTag(tag.id)}
+								size="sm"
 							/>
 							<DeviceColorDot color={tag.color} />
 							<span>{tag.name}</span>
-						</label>
+						</div>
 					{/each}
 					{#if app.tags.length === 0}
 						<p class="empty">Keine Tags verfügbar.</p>

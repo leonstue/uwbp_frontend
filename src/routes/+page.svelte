@@ -12,6 +12,7 @@
 	import DeviceColorDot from '$lib/components/device/DeviceColorDot.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Toggle from '$lib/components/ui/Toggle.svelte';
 
 	// ---- context ----
 	const app = getContext('app');
@@ -98,10 +99,7 @@
 		<div class="viz-head">
 			<span class="lbl">Live</span>
 			<div class="head-actions">
-				<label class="trail-toggle">
-					<input type="checkbox" bind:checked={trailEnabled} />
-					<span>Trail anzeigen</span>
-				</label>
+				<Toggle bind:checked={trailEnabled} label="Trail anzeigen" size="sm" />
 				<ViewToggle bind:mode storageKey="dashboard" allow3d />
 			</div>
 		</div>
@@ -184,15 +182,6 @@
 		align-items: center;
 		gap: var(--space-3);
 		flex-wrap: wrap;
-	}
-	.trail-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-xs);
-		color: var(--text-secondary);
-		cursor: pointer;
-		user-select: none;
 	}
 	.lbl {
 		font-size: var(--text-xs);
