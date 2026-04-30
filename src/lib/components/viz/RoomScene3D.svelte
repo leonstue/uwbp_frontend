@@ -13,16 +13,16 @@
 		minHeight = 460
 	} = $props();
 
-	// ---- state ----
-	let bgColor = $state('#131922');
+	// ---- theme (read once, observe via mutation, but stays referentially stable for helpers) ----
 	let mutedColor = $state('#5C6877');
 	let borderColor = $state('#2A3444');
+	let bgColor = $state('#131922');
 
 	function readTheme() {
 		const cs = getComputedStyle(document.documentElement);
-		bgColor = cs.getPropertyValue('--bg-secondary').trim() || '#131922';
 		mutedColor = cs.getPropertyValue('--text-muted').trim() || '#5C6877';
 		borderColor = cs.getPropertyValue('--border').trim() || '#2A3444';
+		bgColor = cs.getPropertyValue('--bg-secondary').trim() || '#131922';
 	}
 
 	onMount(() => {
@@ -32,7 +32,11 @@
 		return () => obs.disconnect();
 	});
 
-	// ---- helpers ----
+	// ---- helpers (stable references) ----
+	const gridArgs = $derived([20, 20, mutedColor, borderColor]);
+	const axesArgs = [2];
+
+	// ---- tag position lookup ----
 	function tagWorldPosition(tag) {
 		if (cursorTs !== null && tagHistory) {
 			const entries = tagHistory.get?.(tag.id) ?? tagHistory[tag.id];
@@ -51,73 +55,47 @@
 	}
 
 	function residualOf(tag) {
-		if (cursorTs !== null && tagHistory) {
-			const entries = tagHistory.get?.(tag.id) ?? tagHistory[tag.id];
-			if (entries) {
-				let cursor = null;
-				for (const e of entries) {
-					if (e.timestamp <= cursorTs) cursor = e;
-					else break;
-				}
-				if (cursor) return cursor.residual ?? 0;
-			}
-		}
 		const live = positions.find((p) => p.tagId === tag.id);
 		return live?.residual ?? 0;
 	}
 
-	// ---- derived: scene bounds for camera ----
-	let sceneCenter = $derived.by(() => {
-		const all = [...anchors.map((a) => a.position), ...tags.map((t) => tagWorldPosition(t))];
-		if (!all.length) return { x: 2.5, y: 2, z: 1 };
-		const sum = all.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y, z: acc.z + p.z }), {
-			x: 0,
-			y: 0,
-			z: 0
-		});
-		return { x: sum.x / all.length, y: sum.y / all.length, z: sum.z / all.length };
-	});
+	// ---- camera defaults: computed ONCE on mount, frozen ever after (so OrbitControls owns the view) ----
+	let initialCamPos = $state([8, 5, 8]);
+	let initialTarget = $state([2.5, 1, -2]);
 
-	let sceneRadius = $derived.by(() => {
-		const all = [...anchors.map((a) => a.position), ...tags.map((t) => tagWorldPosition(t))];
-		if (!all.length) return 6;
-		let max = 0;
-		for (const p of all) {
-			const dx = p.x - sceneCenter.x;
-			const dy = p.y - sceneCenter.y;
-			const dz = p.z - sceneCenter.z;
+	onMount(() => {
+		// derive initial camera from anchors only (stable, no live-tag interference)
+		const list = anchors.length ? anchors.map((a) => a.position) : [{ x: 2.5, y: 2, z: 1 }];
+		const cx = list.reduce((s, p) => s + p.x, 0) / list.length;
+		const cy = list.reduce((s, p) => s + p.y, 0) / list.length;
+		const cz = list.reduce((s, p) => s + p.z, 0) / list.length;
+		let radius = 0;
+		for (const p of list) {
+			const dx = p.x - cx;
+			const dy = p.y - cy;
+			const dz = p.z - cz;
 			const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-			if (d > max) max = d;
+			if (d > radius) radius = d;
 		}
-		return Math.max(4, max * 1.8);
+		radius = Math.max(4, radius * 1.8);
+		initialCamPos = [cx + radius, cz + radius * 0.6, -cy + radius];
+		initialTarget = [cx, cz, -cy];
 	});
-
-	// camera helper: world (x, y, z) → three (x, z, -y)
-	let camPos = $derived([
-		sceneCenter.x + sceneRadius,
-		sceneCenter.z + sceneRadius * 0.6,
-		-sceneCenter.y + sceneRadius
-	]);
-	let camTarget = $derived([sceneCenter.x, sceneCenter.z, -sceneCenter.y]);
 </script>
 
 <div class="wrap" style:height="{minHeight}px" style:--bg={bgColor} style:--border-c={borderColor}>
 	<Canvas>
-		<T.PerspectiveCamera makeDefault position={camPos} fov={50}>
-			<OrbitControls enableDamping target={camTarget} maxPolarAngle={Math.PI / 2.05} />
+		<T.PerspectiveCamera makeDefault position={initialCamPos} fov={50}>
+			<OrbitControls enableDamping target={initialTarget} maxPolarAngle={Math.PI / 2.05} />
 		</T.PerspectiveCamera>
 
 		<T.AmbientLight intensity={0.7} />
 		<T.DirectionalLight position={[10, 12, 8]} intensity={0.9} />
 		<T.HemisphereLight intensity={0.4} groundColor={borderColor} />
 
-		<!-- ground grid: native three.js GridHelper -->
-		<T.GridHelper args={[20, 20, mutedColor, borderColor]} />
+		<T.GridHelper args={gridArgs} />
+		<T.AxesHelper args={axesArgs} />
 
-		<!-- axes helper at world origin (red=X, green=Y_three=Z_world, blue=Z_three=−Y_world) -->
-		<T.AxesHelper args={[2]} />
-
-		<!-- anchors as cubes; world (x,y,z) → three (x, z, -y) -->
 		{#each anchors as a (a.id)}
 			<T.Mesh position={[a.position.x, a.position.z, -a.position.y]}>
 				<T.BoxGeometry args={[0.25, 0.25, 0.25]} />
@@ -125,13 +103,12 @@
 			</T.Mesh>
 		{/each}
 
-		<!-- tags as glowing spheres -->
 		{#each tags as t (t.id)}
 			{@const pos = tagWorldPosition(t)}
 			{@const lowQ = residualOf(t) > 0.5}
 			<T.Group position={[pos.x, pos.z, -pos.y]}>
 				<T.Mesh>
-					<T.SphereGeometry args={[0.18, 32, 32]} />
+					<T.SphereGeometry args={[0.18, 24, 24]} />
 					<T.MeshStandardMaterial
 						color={t.color}
 						emissive={t.color}
@@ -140,12 +117,11 @@
 						roughness={0.3}
 					/>
 				</T.Mesh>
-				<T.PointLight color={t.color} intensity={1.5} distance={2.5} />
+				<T.PointLight color={t.color} intensity={1.2} distance={2} />
 			</T.Group>
 		{/each}
 	</Canvas>
 
-	<!-- DOM overlay legend (axes legend + device names) -->
 	<div class="legend">
 		<div class="leg-row"><span class="ax x"></span> X</div>
 		<div class="leg-row"><span class="ax y"></span> Y</div>

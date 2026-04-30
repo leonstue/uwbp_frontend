@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { drawGrid } from './GridLayer.svelte';
 	import { drawAxisLabels } from './AxisLabels.svelte';
 	import { drawAnchor } from './AnchorMarker.svelte';
@@ -41,6 +42,11 @@
 	let height = $state(400);
 	let dpr = $state(1);
 	let hover = $state(null);
+
+	// ---- interpolation cache ----
+	const tagDisplay = new Map();
+	let raf = 0;
+	let needsRender = true;
 
 	// ---- helpers ----
 	function project(p, m) {
@@ -112,6 +118,41 @@
 		};
 	}
 
+	function lerp(a, b, t) {
+		return a + (b - a) * t;
+	}
+
+	function stepInterpolation() {
+		const positionsByTag = new Map();
+		for (const p of positions) positionsByTag.set(p.tagId, p);
+		const smoothing = 0.18;
+		let moving = false;
+		for (const t of tags) {
+			const tp = positionsByTag.get(t.id);
+			const target = tp?.position ?? t.position;
+			let cur = tagDisplay.get(t.id);
+			if (!cur) {
+				cur = { x: target.x, y: target.y, z: target.z, residual: tp?.residual ?? 0 };
+				tagDisplay.set(t.id, cur);
+			}
+			const dx = target.x - cur.x;
+			const dy = target.y - cur.y;
+			const dz = target.z - cur.z;
+			if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 0.001) {
+				cur.x = lerp(cur.x, target.x, smoothing);
+				cur.y = lerp(cur.y, target.y, smoothing);
+				cur.z = lerp(cur.z, target.z, smoothing);
+				moving = true;
+			} else {
+				cur.x = target.x;
+				cur.y = target.y;
+				cur.z = target.z;
+			}
+			cur.residual = tp?.residual ?? 0;
+		}
+		return moving;
+	}
+
 	function render() {
 		if (!canvasEl) return;
 		const ctx = canvasEl.getContext('2d');
@@ -126,9 +167,6 @@
 
 		drawGrid(ctx, transform, theme);
 		drawAxisLabels(ctx, transform, mode, theme);
-
-		const positionsByTag = new Map();
-		for (const p of positions) positionsByTag.set(p.tagId, p);
 
 		for (const trail of trails) {
 			const screenPoints = trail.points.map((pt) => ({
@@ -146,10 +184,8 @@
 			drawAnchor(ctx, worldToScreen(a.position, transform), a, theme);
 		}
 		for (const t of tags) {
-			const tp = positionsByTag.get(t.id);
-			const pos = tp?.position ?? t.position;
-			const residual = tp?.residual ?? 0;
-			drawTag(ctx, worldToScreen(pos, transform), t, theme, residual);
+			const display = tagDisplay.get(t.id) ?? t.position;
+			drawTag(ctx, worldToScreen(display, transform), t, theme, display.residual ?? 0);
 		}
 
 		if (hover) {
@@ -179,13 +215,13 @@
 		if (!wrapEl || !canvasEl) return;
 		const rect = wrapEl.getBoundingClientRect();
 		const newWidth = Math.round(rect.width);
-		const newHeight = Math.round(Math.max(minHeight, rect.width * 0.6));
-		if (newWidth === width && newHeight === height && dpr === (window.devicePixelRatio || 1)) {
-			return;
-		}
+		const newHeight = Math.round(rect.height);
+		const newDpr = window.devicePixelRatio || 1;
+		if (newWidth === width && newHeight === height && newDpr === dpr) return;
+		if (newWidth <= 0 || newHeight <= 0) return;
 		width = newWidth;
 		height = newHeight;
-		dpr = window.devicePixelRatio || 1;
+		dpr = newDpr;
 		canvasEl.width = width * dpr;
 		canvasEl.height = height * dpr;
 		render();
@@ -243,28 +279,43 @@
 		} else {
 			hover = null;
 		}
-		render();
+		needsRender = true;
 	}
 
 	function onLeave() {
 		hover = null;
-		render();
+		needsRender = true;
 	}
 
 	// ---- mount/effects ----
 	$effect(() => {
 		if (mode === '3d' || !wrapEl) return;
-		const ro = new ResizeObserver(onResize);
+		const ro = new ResizeObserver(() => {
+			onResize();
+			needsRender = true;
+		});
 		ro.observe(wrapEl);
-		onResize();
-		const themeObserver = new MutationObserver(render);
+		untrack(() => onResize());
+		const themeObserver = new MutationObserver(() => (needsRender = true));
 		themeObserver.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ['data-theme']
 		});
+
+		const loop = () => {
+			const moving = stepInterpolation();
+			if (moving || needsRender) {
+				render();
+				needsRender = false;
+			}
+			raf = requestAnimationFrame(loop);
+		};
+		raf = requestAnimationFrame(loop);
+
 		return () => {
 			ro.disconnect();
 			themeObserver.disconnect();
+			cancelAnimationFrame(raf);
 		};
 	});
 
@@ -276,7 +327,8 @@
 		void mode;
 		void cursorTs;
 		void showTrailFade;
-		if (mode !== '3d') render();
+		void hover;
+		needsRender = true;
 	});
 </script>
 
@@ -291,14 +343,8 @@
 		{/if}
 	</div>
 {:else}
-	<div class="wrap" bind:this={wrapEl} style:height="{height}px">
-		<canvas
-			bind:this={canvasEl}
-			onmousemove={onMove}
-			onmouseleave={onLeave}
-			style:width="{width}px"
-			style:height="{height}px"
-		></canvas>
+	<div class="wrap" bind:this={wrapEl} style:height="{minHeight}px">
+		<canvas bind:this={canvasEl} onmousemove={onMove} onmouseleave={onLeave}></canvas>
 	</div>
 {/if}
 
@@ -313,6 +359,8 @@
 	}
 	canvas {
 		display: block;
+		width: 100%;
+		height: 100%;
 	}
 	.loading {
 		display: flex;

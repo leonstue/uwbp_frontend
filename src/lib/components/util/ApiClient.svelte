@@ -2,8 +2,8 @@
 	// ---- config ----
 	const API_BASE = import.meta.env.VITE_API_URL ?? '';
 	const IS_MOCK = !API_BASE;
-	const ONLINE_MS = Number(import.meta.env.VITE_STATUS_ONLINE_THRESHOLD_MS ?? 5000);
-	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 30000);
+	const ONLINE_MS = Number(import.meta.env.VITE_STATUS_ONLINE_THRESHOLD_MS ?? 1000);
+	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
 
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [

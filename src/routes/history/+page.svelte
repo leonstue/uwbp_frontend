@@ -1,5 +1,5 @@
 <script>
-	import { getContext } from 'svelte';
+	import { getContext, untrack } from 'svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -29,6 +29,8 @@
 	let speed = $state(1);
 	let raf = null;
 	let lastFrameAt = 0;
+	let frozenRange = $state(null);
+	let dirty = $state(false);
 
 	// ---- derived ----
 	let presetTabs = [
@@ -39,7 +41,7 @@
 		{ id: 'custom', label: 'Custom' }
 	];
 
-	let range = $derived.by(() => {
+	function liveRange() {
 		const now = Date.now();
 		if (rangePreset === '1m') return { from: now - 60_000, to: now };
 		if (rangePreset === '5m') return { from: now - 5 * 60_000, to: now };
@@ -48,7 +50,9 @@
 		if (rangePreset === 'custom' && customFrom && customTo)
 			return { from: customFrom, to: customTo };
 		return { from: now - 5 * 60_000, to: now };
-	});
+	}
+
+	let range = $derived(frozenRange ?? liveRange());
 
 	let trails = $derived.by(() => {
 		const out = [];
@@ -146,15 +150,29 @@
 	});
 
 	$effect(() => {
-		void selectedTagIds;
-		void range.from;
-		void range.to;
-		loadTrails();
+		void rangePreset;
+		void customFrom;
+		void customTo;
+		dirty = true;
 	});
+
+	$effect(() => {
+		void selectedTagIds;
+		untrack(() => refresh());
+	});
+
+	function refresh() {
+		frozenRange = liveRange();
+		dirty = false;
+		loadTrails();
+	}
 </script>
 
 <PageHeader title="History" subtitle="Bewegungs-Trails der Tags zeitlich analysieren">
 	{#snippet actions()}
+		<Button variant={dirty ? 'primary' : 'secondary'} size="sm" onclick={refresh} loading={loading}>
+			Aktualisieren
+		</Button>
 		{#if trailsData.size > 0}
 			<Button variant="secondary" size="sm" onclick={exportCsv}>
 				<Download size={14} /> CSV
