@@ -3,6 +3,7 @@
 	let {
 		checked = $bindable(false),
 		label,
+		children,
 		disabled = false,
 		size = 'md',
 		onchange,
@@ -27,7 +28,9 @@
 	<span class="track" aria-hidden="true">
 		<span class="thumb"></span>
 	</span>
-	{#if label}
+	{#if children}
+		<span class="content">{@render children()}</span>
+	{:else if label}
 		<span class="lbl">{label}</span>
 	{/if}
 </label>
@@ -123,5 +126,10 @@
 
 	.lbl {
 		font-weight: 500;
+	}
+	.content {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 </style>

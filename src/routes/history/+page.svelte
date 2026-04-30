@@ -192,15 +192,14 @@
 				<span class="lbl">Tags</span>
 				<div class="tags">
 					{#each app.tags as tag (tag.id)}
-						<div class="tag-row">
-							<Toggle
-								checked={selectedTagIds.has(tag.id)}
-								onchange={() => toggleTag(tag.id)}
-								size="sm"
-							/>
+						<Toggle
+							checked={selectedTagIds.has(tag.id)}
+							onchange={() => toggleTag(tag.id)}
+							size="sm"
+						>
 							<DeviceColorDot color={tag.color} />
-							<span>{tag.name}</span>
-						</div>
+							<span class="tag-name">{tag.name}</span>
+						</Toggle>
 					{/each}
 					{#if app.tags.length === 0}
 						<p class="empty">Keine Tags verfügbar.</p>
@@ -299,12 +298,8 @@
 		max-height: 240px;
 		overflow-y: auto;
 	}
-	.tag-row {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
+	.tag-name {
 		font-size: var(--text-sm);
-		cursor: pointer;
 	}
 	.empty {
 		font-size: var(--text-sm);
