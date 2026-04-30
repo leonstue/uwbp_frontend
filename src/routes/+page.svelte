@@ -79,6 +79,72 @@
 			}
 		}, 1500);
 	});
+
+	// ---- debug: dump trail every 10s as plain text (copy/paste friendly) ----
+	$effect(() => {
+		const id = setInterval(() => {
+			if (!trailEnabled) return;
+			const now = Date.now();
+			const cutoff = now - trailWindowSec * 1000;
+			const lines = [];
+			lines.push(
+				`==== TRAIL SNAPSHOT @ ${new Date(now).toLocaleTimeString('de-DE')} ` +
+					`(window=${trailWindowSec}s, minDist=${TRAIL_MIN_DIST_M}m) ====`
+			);
+			for (const tag of app.tags) {
+				const raw = (app.tagHistory.get?.(tag.id) ?? []).filter((e) => e.timestamp >= cutoff);
+				const filtered = liveTrails.find((t) => t.tagId === tag.id)?.points ?? [];
+
+				let totalPath = 0;
+				const gaps = [];
+				for (let i = 1; i < filtered.length; i++) {
+					const a = filtered[i - 1].position;
+					const b = filtered[i].position;
+					const d = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+					totalPath += d;
+					gaps.push(d);
+				}
+				const span = filtered.length
+					? (filtered[filtered.length - 1].timestamp - filtered[0].timestamp) / 1000
+					: 0;
+				const avgGap = gaps.length ? gaps.reduce((s, x) => s + x, 0) / gaps.length : 0;
+				const maxGap = gaps.length ? Math.max(...gaps) : 0;
+				const skipped = raw.length - filtered.length;
+
+				let rawTotal = 0;
+				for (let i = 1; i < raw.length; i++) {
+					const a = raw[i - 1].position;
+					const b = raw[i].position;
+					rawTotal += Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+				}
+
+				lines.push('');
+				lines.push(`-- ${tag.name} (${tag.id}) --`);
+				lines.push(
+					`raw=${raw.length}  trail=${filtered.length}  skipped=${skipped}  ` +
+						`span=${span.toFixed(1)}s  pathTrail=${totalPath.toFixed(3)}m  pathRaw=${rawTotal.toFixed(3)}m  ` +
+						`avgGap=${avgGap.toFixed(3)}m  maxGap=${maxGap.toFixed(3)}m`
+				);
+
+				if (filtered.length === 0) {
+					lines.push('(no trail — standstill or no data in window)');
+					continue;
+				}
+				lines.push('  age(s)   x       y       z      residual');
+				for (const e of filtered) {
+					const ageS = ((now - e.timestamp) / 1000).toFixed(2).padStart(5);
+					const x = e.position.x.toFixed(2).padStart(6);
+					const y = e.position.y.toFixed(2).padStart(6);
+					const z = e.position.z.toFixed(2).padStart(6);
+					const r = (e.residual ?? 0).toFixed(2);
+					lines.push(`  ${ageS}   ${x}  ${y}  ${z}    ${r}`);
+				}
+			}
+			lines.push('==== END SNAPSHOT ====');
+			console.log(lines.join('\n'));
+		}, 10_000);
+		return () => clearInterval(id);
+	});
 </script>
 
 <PageHeader title="Dashboard" subtitle="Echtzeit-Übersicht über Anchors und Tags">
