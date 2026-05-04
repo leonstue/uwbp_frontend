@@ -2,20 +2,20 @@
 
 Frontend für das UWBP Indoor-Positioning-System. Svelte 5, SvelteKit und `adapter-node`.
 
-Das Projekt besteht aus zwei Teilen:
+Repos:
 
 - Frontend: <https://github.com/leonstue/uwbp_frontend>
 - Backend: <https://github.com/leonstue/uwbp_server>
 
-Das Frontend stellt das Dashboard für das UWBP-System bereit. Das Backend läuft auf dem Raspberry Pi, stellt die API bereit und verwaltet das WLAN für die ESP32-Geräte.
+Das Frontend stellt das Dashboard bereit und wird auf dem Raspberry Pi als systemd-Service auf Port 80 gestartet.
 
-Das Backend wird separat gebaut und deployed. Für den vollständigen Betrieb müssen Backend und Frontend eingerichtet sein.
+Das Backend muss ebenfalls deployed sein und die API bereitstellen.
 
 ---
 
-## Voraussetzungen
+## Deploymentanleitung
 
-Backend- und Frontend-Projekt müssen bereits lokal auf dem Raspberry Pi vorhanden sein.
+Das Frontend-Projekt muss bereits lokal auf dem Raspberry Pi vorhanden sein.
 
 In dieser README wird folgender Platzhalter verwendet:
 
@@ -29,157 +29,20 @@ Das gebaute Frontend wird unter folgendem Pfad deployed:
 /opt/uwbp/frontend
 ```
 
----
-
-## Live-Konfiguration für das Deployment
-
-Für das Deployment muss das Frontend im Live-Modus gebaut werden. Dafür wird im Frontend-Projekt eine `.env`-Datei angelegt bzw. angepasst:
-
-```env
-VITE_API_URL=/api
-VITE_BACKEND_URL=http://uwbp:8080
-```
-
-`VITE_API_URL=/api` sorgt dafür, dass das Frontend `/api` als API-Pfad verwendet.
-
-`VITE_BACKEND_URL=http://uwbp:8080` verweist auf den UWBP-Backend-Server. Dieser Hostname funktioniert nur, wenn der Alias `uwbp` im vom Raspberry Pi bereitgestellten Netzwerk korrekt aufgelöst wird.
-
-Wenn der Alias noch nicht funktioniert, muss alternativ die erreichbare IP-Adresse des Raspberry Pi verwendet werden, zum Beispiel:
-
-```env
-VITE_API_URL=/api
-VITE_BACKEND_URL=http://10.42.0.1:8080
-```
-
-Wichtig: Die `.env`-Datei muss vor `npm run build` gesetzt sein, damit das Frontend mit der Live-Konfiguration gebaut wird.
-
-Wenn `VITE_API_URL` leer bzw. nicht gesetzt ist, läuft das Frontend im Mock-Modus. Das ist für das Deployment nicht gewünscht.
-
----
-
-## Dev
-
-```bash
-npm install
-npm run dev
-```
-
-Default läuft das Frontend im Mock-Modus mit in-memory Devices und simulierter Tag-Bewegung.
-
-Um in der Entwicklung gegen das echte Backend zu arbeiten, wird ebenfalls die `.env`-Konfiguration verwendet:
-
-```env
-VITE_API_URL=/api
-VITE_BACKEND_URL=http://uwbp:8080
-```
-
-`/api`-Requests gehen im Entwicklungsbetrieb über den Vite-Proxy an `VITE_BACKEND_URL`. Dadurch entsteht im Dev-Betrieb kein CORS-Problem.
-
----
-
-## Node.js und npm installieren
-
-```bash
-sudo apt update
-sudo apt upgrade -y
-
-sudo apt install -y nodejs npm
-sudo npm install -g npm@latest
-sudo npm install -g n
-sudo n stable
-```
-
----
-
-## Build
-
-Vor dem Build muss die Live-Konfiguration in `.env` gesetzt sein.
+### Frontend vollständig deployen
 
 ```bash
 cd <FRONTEND_DIR>
-npm install
-npm run build
-```
 
-Nach erfolgreichem Build liegt das gebaute Frontend im Ordner:
-
-```text
-<FRONTEND_DIR>/build
-```
-
-Lokal kann der Production-Server grundsätzlich mit `npm start` gestartet werden. Der Server führt `node build` aus und hört auf `$PORT`, standardmäßig auf Port 3000.
-
----
-
-## Gebautes Frontend deployen
-
-Es wird nur das gebaute Frontend-Artefakt nach `/opt/uwbp/frontend` kopiert.
-
-```bash
-sudo rm -rf /opt/uwbp/frontend
-sudo mkdir -p /opt/uwbp/frontend
-
-sudo cp -a <FRONTEND_DIR>/build /opt/uwbp/frontend/build
-sudo cp -a <FRONTEND_DIR>/package.json /opt/uwbp/frontend/package.json
-sudo cp -a <FRONTEND_DIR>/package-lock.json /opt/uwbp/frontend/package-lock.json
-sudo cp -a <FRONTEND_DIR>/node_modules /opt/uwbp/frontend/node_modules
-```
-
----
-
-## Frontend-Service-Datei
-
-Im Frontend-Repository liegt die systemd-Service-Datei unter:
-
-```text
-<FRONTEND_DIR>/deploy/uwbp-frontend.service
-```
-
-Die Service-Datei startet das gebaute Frontend auf Port 80 und erst nach dem Backend-Service:
-
-```ini
-[Unit]
-Description=UWBP Frontend Server
-Requires=uwbp-server.service
-After=uwbp-server.service
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/uwbp/frontend
-ExecStart=/usr/local/bin/node build
-Restart=always
-RestartSec=5
-User=root
-Environment=HOST=0.0.0.0
-Environment=PORT=80
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Da das Frontend auf Port 80 gestartet wird, wird der Service hier mit `User=root` ausgeführt.
-
----
-
-## Frontend-Service installieren
-
-```bash
-sudo cp <FRONTEND_DIR>/deploy/uwbp-frontend.service /etc/systemd/system/uwbp-frontend.service
-sudo systemctl daemon-reload
-sudo systemctl enable uwbp-frontend.service
-```
-
-Danach wird der Raspberry Pi neu gestartet:
-
-```bash
+sudo make install-deps
+make set-live-env
+make build
+sudo make deploy
+sudo make install-service
 sudo reboot
 ```
 
----
-
-## Nach dem Reboot testen
-
-Nach dem Neustart kann geprüft werden, ob der Frontend-Service erfolgreich automatisch gestartet wurde:
+Nach dem Neustart prüfen:
 
 ```bash
 systemctl status uwbp-frontend.service --no-pager
@@ -188,13 +51,13 @@ journalctl -u uwbp-frontend.service -n 50 --no-pager
 
 Wenn der Service `active (running)` ist, wurde das Frontend erfolgreich gestartet.
 
-Das Dashboard ist anschließend über Port 80 erreichbar, zum Beispiel:
+Das Dashboard ist anschließend erreichbar unter:
 
 ```text
 http://<PI-IP>
 ```
 
-Wenn das Backend den Access Point mit der Adresse `10.42.0.1` bereitstellt:
+Wenn der Raspberry Pi den Access Point mit `10.42.0.1` bereitstellt:
 
 ```text
 http://10.42.0.1
@@ -202,7 +65,48 @@ http://10.42.0.1
 
 ---
 
-## Skripte
+## Live-Konfiguration
+
+Für das Deployment muss das Frontend im Live-Modus gebaut werden.
+
+Das Make-Target `make set-live-env` erstellt dafür eine `.env`-Datei mit:
+
+```env
+VITE_API_URL=/api
+VITE_BACKEND_URL=http://uwbp:8080
+```
+
+Falls der Alias `uwbp` noch nicht funktioniert, kann die Backend-URL beim Setzen der `.env` überschrieben werden:
+
+```bash
+make set-live-env VITE_BACKEND_URL=http://10.42.0.1:8080
+```
+
+Danach muss das Frontend neu gebaut und deployed werden:
+
+```bash
+make build
+sudo make deploy
+sudo make install-service
+sudo reboot
+```
+
+---
+
+## Make-Targets
+
+| Target | Beschreibung |
+| --- | --- |
+| `make help` | Zeigt alle verfügbaren Make-Targets an. |
+| `sudo make install-deps` | Installiert Node.js, npm, aktualisiert npm und installiert eine aktuelle stabile Node.js-Version über `n`. |
+| `make set-live-env` | Erstellt die `.env`-Datei für den Live-Betrieb mit `VITE_API_URL=/api` und `VITE_BACKEND_URL=http://uwbp:8080`. |
+| `make build` | Installiert npm-Abhängigkeiten und baut das Frontend. |
+| `sudo make deploy` | Kopiert das gebaute Frontend nach `/opt/uwbp/frontend`. |
+| `sudo make install-service` | Installiert den systemd-Service und aktiviert den Autostart. |
+
+---
+
+## npm-Skripte
 
 | Befehl | Zweck |
 | --- | --- |
@@ -215,11 +119,26 @@ http://10.42.0.1
 
 ---
 
-## Mock vs. Live
+## systemd-Service
+
+Der Frontend-Service wird durch `sudo make install-service` installiert.
+
+Erwarteter Service-Name:
 
 ```text
-VITE_API_URL leer oder nicht gesetzt  -> Mock-Modus
-VITE_API_URL=/api                    -> Live-Modus über API-Pfad /api
+uwbp-frontend.service
 ```
 
-Für das Deployment muss der Live-Modus verwendet werden.
+Status prüfen:
+
+```bash
+systemctl status uwbp-frontend.service --no-pager
+```
+
+Logs anzeigen:
+
+```bash
+journalctl -u uwbp-frontend.service -n 50 --no-pager
+```
+
+Der Service startet das Frontend auf Port 80.
