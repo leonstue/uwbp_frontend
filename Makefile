@@ -1,4 +1,5 @@
 DEPLOY_DIR      := /opt/uwbp/frontend
+STAGING_DIR     := /opt/uwbp/frontend.next
 SERVICE_FILE    := deploy/uwbp-frontend.service
 SYSTEMD_SERVICE := /etc/systemd/system/uwbp-frontend.service
 SERVICE_NAME    := uwbp-frontend.service
@@ -11,7 +12,7 @@ BACKEND_URL  ?= http://localhost:8080
 
 help:
 	@echo "Available targets:"
-	@echo "  make deploy           - install deps, set live env, build, deploy artifact, enable service for next boot"
+	@echo "  make deploy           - install deps, set live env, build, stage artifact, enable service for next boot (running service is NOT restarted)"
 	@echo "  make clean            - stop/remove service, remove deployed artifact and remove local build/npm artifacts"
 	@echo "  make clean-artifacts  - remove only deployed artifact from /opt; service stays registered and may fail until redeployed"
 	@echo "  make logs             - show recent logs of deployed frontend service"
@@ -19,7 +20,7 @@ help:
 	@echo "  make install-deps     - install Node.js, npm, latest npm and stable Node via n"
 	@echo "  make set-live-env     - write .env for live backend"
 	@echo "  make build            - install npm dependencies and build frontend"
-	@echo "  make deploy-artifact  - copy built frontend to /opt/uwbp/frontend"
+	@echo "  make deploy-artifact  - stage built frontend to /opt/uwbp/frontend.next (active on next service start)"
 	@echo "  make install-service  - install and enable systemd service (starts on next boot)"
 	@echo "  make start            - manually start/restart frontend service now"
 	@echo "  make stop             - manually stop frontend service now"
@@ -45,12 +46,13 @@ build:
 deploy: install-deps set-live-env build deploy-artifact install-service
 
 deploy-artifact:
-	sudo rm -rf $(DEPLOY_DIR)
-	sudo mkdir -p $(DEPLOY_DIR)
-	sudo cp -a build $(DEPLOY_DIR)/build
-	sudo cp -a package.json $(DEPLOY_DIR)/package.json
-	sudo cp -a node_modules $(DEPLOY_DIR)/node_modules
-	sudo cp -a .env $(DEPLOY_DIR)/.env
+	sudo rm -rf $(STAGING_DIR)
+	sudo mkdir -p $(STAGING_DIR)
+	sudo cp -a build $(STAGING_DIR)/build
+	sudo cp -a package.json $(STAGING_DIR)/package.json
+	sudo cp -a node_modules $(STAGING_DIR)/node_modules
+	sudo cp -a .env $(STAGING_DIR)/.env
+	@echo "staged at $(STAGING_DIR) — wird beim nächsten Service-Start aktiv"
 
 install-service:
 	sudo cp $(SERVICE_FILE) $(SYSTEMD_SERVICE)
@@ -67,14 +69,14 @@ logs:
 	journalctl -u $(SERVICE_NAME) -n 50 --no-pager
 
 clean-artifacts:
-	sudo rm -rf $(DEPLOY_DIR)
+	sudo rm -rf $(DEPLOY_DIR) $(STAGING_DIR)
 
 clean:
 	sudo systemctl disable --now $(SERVICE_NAME) 2>/dev/null || true
 	sudo rm -f $(SYSTEMD_SERVICE)
 	sudo systemctl daemon-reload
 	sudo systemctl reset-failed
-	sudo rm -rf $(DEPLOY_DIR)
+	sudo rm -rf $(DEPLOY_DIR) $(STAGING_DIR)
 	rm -rf build
 	rm -rf .svelte-kit
 	rm -rf node_modules

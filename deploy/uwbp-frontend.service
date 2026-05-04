@@ -6,6 +6,7 @@ After=uwbp-server.service
 [Service]
 Type=simple
 WorkingDirectory=/opt/uwbp/frontend
+ExecStartPre=/bin/bash -c 'if [ -d /opt/uwbp/frontend.next ]; then rm -rf /opt/uwbp/frontend && mv /opt/uwbp/frontend.next /opt/uwbp/frontend; fi'
 ExecStart=/usr/local/bin/node build
 Restart=always
 RestartSec=5

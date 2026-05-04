@@ -39,7 +39,7 @@ cd <FRONTEND_DIR>
 make deploy
 ```
 
-`make deploy` installiert Node.js und npm, erstellt die Live-`.env`, baut das Frontend, kopiert das gebaute Artefakt nach `/opt/uwbp/frontend` und installiert den systemd-Service. Der Service wird **erst beim nächsten Reboot** automatisch gestartet. Soll er sofort laufen: `make start`.
+`make deploy` installiert Node.js und npm, erstellt die Live-`.env`, baut das Frontend, **staged** das gebaute Artefakt nach `/opt/uwbp/frontend.next` und installiert den systemd-Service. Ein bereits laufender Service wird **nicht angefasst** und läuft auf der alten Version weiter. Beim nächsten Service-Start (Reboot oder `make start`) promoviert ein `ExecStartPre`-Hook den Staging-Ordner zur aktiven Version. Soll die neue Version sofort laufen: `make start`.
 
 Falls der Alias `uwbp` noch nicht funktioniert, kann die Backend-URL überschrieben werden:
 
