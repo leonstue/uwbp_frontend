@@ -4,7 +4,7 @@ SYSTEMD_SERVICE := /etc/systemd/system/uwbp-frontend.service
 SERVICE_NAME    := uwbp-frontend.service
 
 VITE_API_URL ?= /api
-BACKEND_URL  ?= http://uwbp.:8080
+BACKEND_URL  ?= http://localhost:8080
 
 .PHONY: help install-deps set-live-env build deploy deploy-artifact install-service \
         start stop logs clean-artifacts clean

@@ -1,4 +1,4 @@
-const BACKEND = (process.env.BACKEND_URL ?? 'http://uwbp.:8080').replace(/\/+$/, '');
+const BACKEND = (process.env.BACKEND_URL ?? 'http://localhost:8080').replace(/\/+$/, '');
 const PROXY_TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS ?? 2000);
 
 export async function handle({ event, resolve }) {
@@ -35,11 +35,18 @@ export async function handle({ event, resolve }) {
 			headers: respHeaders
 		});
 	} catch (e) {
-		const reason = e?.name === 'AbortError' ? 'upstream timeout' : String(e?.message ?? e);
-		return new Response(JSON.stringify({ error: reason }), {
-			status: 502,
-			headers: { 'content-type': 'application/json' }
-		});
+		const cause = e?.cause?.code ?? e?.code ?? e?.name ?? 'unknown';
+		console.error(
+			`[proxy] ${event.request.method} ${target} failed: ${cause} (${e?.message ?? e})`
+		);
+		return new Response(
+			JSON.stringify({
+				error: 'upstream unreachable',
+				target,
+				reason: String(cause)
+			}),
+			{ status: 502, headers: { 'content-type': 'application/json' } }
+		);
 	} finally {
 		clearTimeout(timer);
 	}
