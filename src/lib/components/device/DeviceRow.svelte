@@ -10,8 +10,8 @@
 	let { device, onSave, onRemove, saving = false } = $props();
 
 	// ---- state ----
-	let nameDraft = $state(device.name);
-	let colorDraft = $state(device.color);
+	let nameDraft = $state('');
+	let colorDraft = $state('');
 	let saveTimer;
 
 	// ---- effects ----

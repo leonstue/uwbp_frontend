@@ -43,8 +43,8 @@
 	});
 
 	// ---- state ----
-	let canvasEl;
-	let wrapEl;
+	let canvasEl = $state(null);
+	let wrapEl = $state(null);
 	let width = $state(600);
 	let height = $state(400);
 	let dpr = $state(1);

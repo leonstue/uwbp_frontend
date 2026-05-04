@@ -17,7 +17,15 @@
 <svelte:window onkeydown={onKey} />
 
 {#if open}
-	<div class="overlay" transition:fade={{ duration: 150 }} onclick={close} role="presentation">
+	<div
+		class="overlay"
+		transition:fade={{ duration: 150 }}
+		onclick={close}
+		onkeydown={(e) => e.key === 'Enter' && close()}
+		role="button"
+		tabindex="-1"
+		aria-label="Dialog schließen"
+	>
 		<div
 			class="dialog"
 			class:s-sm={size === 'sm'}
@@ -26,7 +34,9 @@
 			role="dialog"
 			aria-modal="true"
 			aria-label={title}
+			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			transition:scale={{ duration: 150, start: 0.96 }}
 		>
 			{#if title}
