@@ -12,6 +12,9 @@ RestartSec=5
 User=root
 Environment=HOST=0.0.0.0
 Environment=PORT=80
+Environment=BACKEND_URL=http://uwbp:8080
+Environment=PROXY_TIMEOUT_MS=2000
+EnvironmentFile=-/opt/uwbp/frontend/.env
 
 [Install]
 WantedBy=multi-user.target
