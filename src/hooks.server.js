@@ -1,4 +1,4 @@
-const BACKEND = (process.env.BACKEND_URL ?? 'http://uwbp:8080').replace(/\/+$/, '');
+const BACKEND = (process.env.BACKEND_URL ?? 'http://uwbp.:8080').replace(/\/+$/, '');
 const PROXY_TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS ?? 2000);
 
 export async function handle({ event, resolve }) {
