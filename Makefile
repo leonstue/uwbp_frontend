@@ -3,8 +3,7 @@ SERVICE_FILE    := deploy/uwbp-frontend.service
 SYSTEMD_SERVICE := /etc/systemd/system/uwbp-frontend.service
 SERVICE_NAME    := uwbp-frontend.service
 
-VITE_API_URL ?= /api
-VITE_BACKEND_URL ?= http://uwbp:8080
+VITE_API_URL ?= http://uwbp.:8080
 
 .PHONY: help install-deps set-live-env build deploy deploy-artifact install-service \
         start logs clean-artifacts clean
@@ -24,7 +23,6 @@ help:
 	@echo "  make start            - start/restart frontend service now"
 	@echo ""
 	@echo "VITE_API_URL=$(VITE_API_URL)"
-	@echo "VITE_BACKEND_URL=$(VITE_BACKEND_URL)"
 
 install-deps:
 	sudo apt update
@@ -35,7 +33,7 @@ install-deps:
 	sudo n stable
 
 set-live-env:
-	printf "VITE_API_URL=$(VITE_API_URL)\nVITE_BACKEND_URL=$(VITE_BACKEND_URL)\n" > .env
+	printf "VITE_API_URL=$(VITE_API_URL)\n" > .env
 
 build:
 	npm install
