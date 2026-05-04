@@ -70,12 +70,9 @@
 		return out;
 	});
 
-	// ---- mount: setup-redirect ----
+	// ---- mount ----
 	onMount(() => {
 		didCheckSetup = true;
-		if (!app.isSetup) {
-			goto('/starten');
-		}
 	});
 
 	// ---- debug: dump trail every 10s as plain text (copy/paste friendly) ----
