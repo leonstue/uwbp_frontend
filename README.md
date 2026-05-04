@@ -39,7 +39,7 @@ cd <FRONTEND_DIR>
 make deploy
 ```
 
-`make deploy` installiert Node.js und npm, erstellt die Live-`.env`, baut das Frontend, kopiert das gebaute Artefakt nach `/opt/uwbp/frontend`, installiert den systemd-Service und startet ihn direkt.
+`make deploy` installiert Node.js und npm, erstellt die Live-`.env`, baut das Frontend, kopiert das gebaute Artefakt nach `/opt/uwbp/frontend` und installiert den systemd-Service. Der Service wird **erst beim nächsten Reboot** automatisch gestartet. Soll er sofort laufen: `make start`.
 
 Falls der Alias `uwbp` noch nicht funktioniert, kann die Backend-URL überschrieben werden:
 
@@ -92,7 +92,7 @@ make set-live-env VITE_BACKEND_URL=http://10.42.0.1:8080
 | Target | Beschreibung |
 | --- | --- |
 | `make help` | Zeigt alle verfügbaren Make-Targets an. |
-| `make deploy` | Installiert Abhängigkeiten, setzt die Live-`.env`, baut das Frontend, deployed das Artefakt, installiert den Service und startet ihn direkt. |
+| `make deploy` | Installiert Abhängigkeiten, setzt die Live-`.env`, baut das Frontend, deployed das Artefakt und aktiviert den Service für den nächsten Reboot. Startet ihn nicht sofort. |
 | `make clean` | Stoppt und entfernt den Service, löscht das deployte Artefakt und entfernt lokale Build- und npm-Artefakte. |
 | `make clean-artifacts` | Löscht nur das deployte Artefakt unter `/opt/uwbp/frontend`. Der Service bleibt registriert und kann danach fehlschlagen, bis erneut deployed wurde. |
 | `make logs` | Zeigt die letzten Logs des Frontend-Service an. |
@@ -100,8 +100,9 @@ make set-live-env VITE_BACKEND_URL=http://10.42.0.1:8080
 | `make set-live-env` | Erstellt die `.env`-Datei für den Live-Betrieb. |
 | `make build` | Installiert npm-Abhängigkeiten und baut das Frontend. |
 | `make deploy-artifact` | Kopiert das gebaute Frontend nach `/opt/uwbp/frontend`. |
-| `make install-service` | Installiert und aktiviert den systemd-Service. |
-| `make start` | Startet bzw. restartet den Frontend-Service sofort. |
+| `make install-service` | Installiert und aktiviert den systemd-Service (Autostart bei Reboot). |
+| `make start` | Startet bzw. restartet den Frontend-Service sofort (manuell). |
+| `make stop` | Stoppt den Frontend-Service sofort (manuell). |
 
 ---
 
