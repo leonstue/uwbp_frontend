@@ -34,8 +34,16 @@
 	// ---- state: approved devices (only those registered via wizard) ----
 	let approvedDeviceIds = $state(new Set());
 
+	// ---- in-flight guards (prevent stacking when backend is slow) ----
+	let devicesInFlight = false;
+	let positionsInFlight = false;
+	let healthInFlight = false;
+	let consecutivePositionFails = 0;
+
 	// ---- actions: data ----
 	async function fetchDevices() {
+		if (devicesInFlight) return;
+		devicesInFlight = true;
 		devicesLoading = true;
 		try {
 			const res = await api.devices.list();
@@ -45,26 +53,41 @@
 			devicesError = String(e?.message ?? e);
 		} finally {
 			devicesLoading = false;
+			devicesInFlight = false;
 		}
 	}
 
 	async function fetchPositions() {
+		if (positionsInFlight) return;
+		positionsInFlight = true;
 		try {
 			const res = await api.positions.all();
 			positions = res.positions ?? [];
 			positionsError = null;
+			consecutivePositionFails = 0;
 			pushHistory(positions);
 		} catch (e) {
 			positionsError = String(e?.message ?? e);
+			consecutivePositionFails += 1;
+			if (consecutivePositionFails > 3) {
+				const backoff = Math.min(2000, 200 * consecutivePositionFails);
+				await new Promise((r) => setTimeout(r, backoff));
+			}
+		} finally {
+			positionsInFlight = false;
 		}
 	}
 
 	async function fetchHealth() {
+		if (healthInFlight) return;
+		healthInFlight = true;
 		try {
 			const res = await api.system.health();
 			serverHealth = res?.status === 'ok' ? 'ok' : 'down';
 		} catch {
 			serverHealth = 'down';
+		} finally {
+			healthInFlight = false;
 		}
 	}
 

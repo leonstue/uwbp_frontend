@@ -118,6 +118,29 @@ make set-live-env VITE_BACKEND_URL=http://10.42.0.1:8080
 
 ---
 
+## Live-Daten-Architektur
+
+Das Frontend liest Live-Positionsdaten aktuell per **HTTP-Polling** (zentrale Async-Loop in `src/lib/components/util/Poller.svelte`). Garantien:
+
+- Pro Endpoint maximal **eine** Request gleichzeitig in der Luft (in-flight Guard in `AppState.svelte`).
+- Jede Request hat **`AbortController`-Timeout** (`VITE_REQUEST_TIMEOUT_MS`, default 1500 ms).
+- Nach Fehlern Exponential-Backoff (max 2 s) für Positions-Polling.
+- Polling-Loops werden bei Component-Unmount sauber abgeräumt.
+- Single-Source-of-Truth: **nur eine** Polling-Loop pro Endpoint im Layout-`AppState`, nicht in einzelnen Pages.
+
+`VITE_API_URL` wird in `ApiClient.svelte` normalisiert (trailing `/` und `/api` werden entfernt). Konstrukte wie `/api/api/locations` sind damit ausgeschlossen.
+
+### Migration zu WebSocket / SSE
+
+Wenn das Backend einen Stream-Endpoint bekommt (Spec: `GET /api/stream/positions`):
+
+1. In `AppState.svelte` den Positions-`<Poller>` durch einen `EventSource` (SSE) bzw. `new WebSocket(...)` ersetzen.
+2. Auf `message`-Event den vorhandenen `pushHistory()`-Pfad weiter nutzen — alle Downstream-Komponenten ändern sich nicht.
+3. Reconnect-Backoff (250 ms → 1 s → 5 s) bei `onerror`/`onclose`.
+4. Nur **eine** Connection global, kein per-Component-Connect.
+
+Bis dahin bleibt Polling die robuste Default-Lösung.
+
 ## Service
 
 Service-Name:

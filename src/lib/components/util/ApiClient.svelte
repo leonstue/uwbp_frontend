@@ -1,7 +1,15 @@
 <script module>
 	// ---- config ----
-	const API_BASE = import.meta.env.VITE_API_URL ?? '';
-	const IS_MOCK = !API_BASE;
+	const RAW_API_BASE = (import.meta.env.VITE_API_URL ?? '').trim();
+	function normalizeBase(raw) {
+		if (!raw) return '';
+		let b = raw.replace(/\/+$/, '');
+		if (b.endsWith('/api')) b = b.slice(0, -4);
+		return b;
+	}
+	const API_BASE = normalizeBase(RAW_API_BASE);
+	const IS_MOCK = !API_BASE && RAW_API_BASE === '';
+	const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_REQUEST_TIMEOUT_MS ?? 1500);
 	const ONLINE_MS = Number(import.meta.env.VITE_STATUS_ONLINE_THRESHOLD_MS ?? 1000);
 	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
 
@@ -123,13 +131,20 @@
 
 	// ---- transport ----
 	async function realRequest(path, init) {
-		const res = await fetch(`${API_BASE}${path}`, {
-			...init,
-			headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) }
-		});
-		if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-		const text = await res.text();
-		return text ? JSON.parse(text) : null;
+		const ac = new AbortController();
+		const timer = setTimeout(() => ac.abort(), REQUEST_TIMEOUT_MS);
+		try {
+			const res = await fetch(`${API_BASE}${path}`, {
+				...init,
+				signal: ac.signal,
+				headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) }
+			});
+			if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+			const text = await res.text();
+			return text ? JSON.parse(text) : null;
+		} finally {
+			clearTimeout(timer);
+		}
 	}
 
 	function mockRequest(path, init) {
