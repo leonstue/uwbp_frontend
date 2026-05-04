@@ -27,8 +27,8 @@
 	const steps = ['Willkommen', 'Anchors', 'Benennen', 'Positionen', 'Tags', 'Benennen', 'Fertig'];
 
 	// ---- derived ----
-	let anchorCount = $derived(app.anchors.length);
-	let tagCount = $derived(app.tags.length);
+	let anchorCount = $derived(app.rawAnchors.length);
+	let tagCount = $derived(app.rawTags.length);
 
 	let canGoNext = $derived.by(() => {
 		if (current === 1) return anchorCount >= 3;
@@ -37,7 +37,7 @@
 	});
 
 	let previewAnchors = $derived(
-		app.anchors.map((a) => ({ ...a, position: drafts.get(a.id) ?? a.position }))
+		app.rawAnchors.map((a) => ({ ...a, position: drafts.get(a.id) ?? a.position }))
 	);
 
 	// ---- actions ----
@@ -73,6 +73,7 @@
 	}
 
 	function finish() {
+		app.approveAllCurrent();
 		goto('/');
 	}
 </script>
@@ -113,7 +114,7 @@
 				{/if}
 			</Card>
 			<div class="dev-grid">
-				{#each app.anchors as a (a.id)}
+				{#each app.rawAnchors as a (a.id)}
 					<div class="dev-mini">
 						<StatusDot status={a.status} />
 						<DeviceColorDot color={a.color} />
@@ -128,7 +129,7 @@
 			title="Anchors benennen"
 			description="Gib jedem Anchor einen einprägsamen Namen und eine Farbe."
 		>
-			{#each app.anchors as a (a.id)}
+			{#each app.rawAnchors as a (a.id)}
 				<Card>
 					<div class="namer">
 						<StatusDot status={a.status} />
@@ -153,7 +154,7 @@
 		>
 			<div class="pos-grid">
 				<div class="pos-list">
-					{#each app.anchors as a (a.id)}
+					{#each app.rawAnchors as a (a.id)}
 						{@const draft = drafts.get(a.id) ?? a.position}
 						<Card padding="sm">
 							<div class="namer">
@@ -186,7 +187,7 @@
 				</div>
 			</Card>
 			<div class="dev-grid">
-				{#each app.tags as t (t.id)}
+				{#each app.rawTags as t (t.id)}
 					<div class="dev-mini">
 						<StatusDot status={t.status} />
 						<DeviceColorDot color={t.color} />
@@ -198,7 +199,7 @@
 		</WizardStep>
 	{:else if current === 5}
 		<WizardStep title="Tags benennen" description="Gib jedem Tag einen Namen und eine Farbe.">
-			{#each app.tags as t (t.id)}
+			{#each app.rawTags as t (t.id)}
 				<Card>
 					<div class="namer">
 						<StatusDot status={t.status} />

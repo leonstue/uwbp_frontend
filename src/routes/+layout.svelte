@@ -10,7 +10,7 @@
 	let { children } = $props();
 
 	// ---- derived ----
-	let isWizard = $derived(page.url.pathname.startsWith('/setup'));
+	let isWizard = $derived(page.url.pathname.startsWith('/starten'));
 </script>
 
 <ApiClient>

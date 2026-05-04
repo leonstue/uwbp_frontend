@@ -74,8 +74,8 @@
 	onMount(() => {
 		setTimeout(() => {
 			didCheckSetup = true;
-			if (app.devices.length > 0 && app.anchors.length === 0) {
-				goto('/setup');
+			if (app.approvedDeviceIds.size === 0 && app.rawDevices?.length > 0) {
+				goto('/starten');
 			}
 		}, 1500);
 	});
@@ -157,7 +157,7 @@
 	<Card>
 		<div class="cta">
 			<p>Noch keine Anchors registriert. Schalte mindestens 3 Anchors ein.</p>
-			<Button onclick={() => goto('/setup')}>Setup öffnen</Button>
+			<Button onclick={() => goto('/starten')}>Starten</Button>
 		</div>
 	</Card>
 {:else if didCheckSetup && app.anchors.length < 3}

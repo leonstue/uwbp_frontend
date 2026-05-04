@@ -31,6 +31,9 @@
 	// ---- state: history buffer ----
 	let tagHistory = $state(new Map());
 
+	// ---- state: approved devices (only those registered via wizard) ----
+	let approvedDeviceIds = $state(new Set());
+
 	// ---- actions: data ----
 	async function fetchDevices() {
 		devicesLoading = true;
@@ -127,6 +130,27 @@
 		persistSetting('historyBufferSeconds', s);
 	}
 
+	function persistApproved() {
+		if (typeof localStorage === 'undefined') return;
+		localStorage.setItem('uwbp.approvedDevices', JSON.stringify([...approvedDeviceIds]));
+	}
+
+	function approveDevices(ids) {
+		const next = new Set(approvedDeviceIds);
+		for (const id of ids) next.add(id);
+		approvedDeviceIds = next;
+		persistApproved();
+	}
+
+	function approveAllCurrent() {
+		approveDevices(devices.map((d) => d.id));
+	}
+
+	function clearApproved() {
+		approvedDeviceIds = new Set();
+		persistApproved();
+	}
+
 	// ---- mount: hydrate from localStorage ----
 	onMount(() => {
 		try {
@@ -144,6 +168,15 @@
 			if (pd) pollIntervalDevices = pd;
 			const hb = Number(localStorage.getItem('uwbp.historyBufferSeconds'));
 			if (hb) historyBufferSeconds = hb;
+			const appr = localStorage.getItem('uwbp.approvedDevices');
+			if (appr) {
+				try {
+					const arr = JSON.parse(appr);
+					if (Array.isArray(arr)) approvedDeviceIds = new Set(arr);
+				} catch {
+					// ignore
+				}
+			}
 		} catch {
 			// ignore
 		}
@@ -152,6 +185,9 @@
 	// ---- context exposure ----
 	setContext('app', {
 		get devices() {
+			return devices.filter((d) => approvedDeviceIds.has(d.id));
+		},
+		get rawDevices() {
 			return devices;
 		},
 		get devicesLoading() {
@@ -161,17 +197,35 @@
 			return devicesError;
 		},
 		get positions() {
+			return positions.filter((p) => approvedDeviceIds.has(p.tagId));
+		},
+		get rawPositions() {
 			return positions;
 		},
 		get positionsError() {
 			return positionsError;
 		},
 		get anchors() {
+			return devices.filter((d) => d.type === 'anchor' && approvedDeviceIds.has(d.id));
+		},
+		get rawAnchors() {
 			return devices.filter((d) => d.type === 'anchor');
 		},
 		get tags() {
+			return devices.filter((d) => d.type === 'tag' && approvedDeviceIds.has(d.id));
+		},
+		get rawTags() {
 			return devices.filter((d) => d.type === 'tag');
 		},
+		get approvedDeviceIds() {
+			return approvedDeviceIds;
+		},
+		isApproved(id) {
+			return approvedDeviceIds.has(id);
+		},
+		approveDevices,
+		approveAllCurrent,
+		clearApproved,
 		get isRunning() {
 			return isRunning;
 		},

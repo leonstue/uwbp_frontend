@@ -64,7 +64,7 @@
 
 <ConfirmDialog
 	bind:open={cancelOpen}
-	title="Setup abbrechen?"
+	title="Starten abbrechen?"
 	message="Du kannst den Wizard jederzeit aus den Einstellungen erneut starten."
 	confirmLabel="Abbrechen"
 	cancelLabel="Weiter konfigurieren"

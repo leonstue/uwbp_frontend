@@ -142,9 +142,15 @@
 		{#snippet header()}<span>System</span>{/snippet}
 		<div class="col">
 			<div class="row-between">
-				<span>Setup-Wizard erneut starten</span>
-				<Button variant="secondary" size="sm" onclick={() => goto('/setup')}>
-					<RotateCcw size={14} /> Starten
+				<span>Wizard „Starten" erneut öffnen</span>
+				<Button variant="secondary" size="sm" onclick={() => goto('/starten')}>
+					<RotateCcw size={14} /> Öffnen
+				</Button>
+			</div>
+			<div class="row-between">
+				<span>Geräte-Freigabe zurücksetzen</span>
+				<Button variant="secondary" size="sm" onclick={app.clearApproved}>
+					<Trash2 size={14} /> Zurücksetzen
 				</Button>
 			</div>
 			<div class="row-between">
