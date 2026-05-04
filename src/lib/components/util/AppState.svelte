@@ -250,6 +250,13 @@
 		get pollingActive() {
 			return approvedDeviceIds.size > 0 || page.url.pathname.startsWith('/starten');
 		},
+		get pauseReason() {
+			if (approvedDeviceIds.size === 0 && !page.url.pathname.startsWith('/starten')) {
+				return 'no-setup';
+			}
+			if (!isRunning) return 'manual';
+			return null;
+		},
 		isApproved(id) {
 			return approvedDeviceIds.has(id);
 		},

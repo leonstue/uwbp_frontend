@@ -18,9 +18,15 @@
 		</div>
 	{/if}
 
-	{#if !app.isRunning && !compact}
+	{#if app.pauseReason === 'no-setup' && !compact}
+		<div class="banner banner-warn">
+			Live-Ansicht pausiert — es sind noch keine Geräte registriert. Öffne den Wizard
+			über „Starten", um Anchors und Tags einzurichten.
+		</div>
+	{:else if app.pauseReason === 'manual' && !compact}
 		<div class="banner banner-info">
-			Live-Ansicht pausiert. Daten werden weiter im Hintergrund vom Server gesammelt.
+			Live-Ansicht manuell pausiert. Daten werden weiter im Hintergrund vom Server gesammelt — klicke
+			auf „Gestoppt" oben rechts, um wieder zu starten.
 		</div>
 	{/if}
 
@@ -62,6 +68,11 @@
 	.banner-info {
 		background: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
 		border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+		color: var(--text-secondary);
+	}
+	.banner-warn {
+		background: color-mix(in srgb, var(--status-delayed) 14%, var(--bg-secondary));
+		border: 1px solid color-mix(in srgb, var(--status-delayed) 45%, transparent);
 		color: var(--text-secondary);
 	}
 </style>

@@ -58,15 +58,21 @@
 
 		<div class="actions">
 			{#if !compact}
+				{@const reason = app.pauseReason}
+				{@const running = reason === null}
+				{@const label =
+					reason === null ? 'Läuft' : reason === 'no-setup' ? 'Pausiert' : 'Gestoppt'}
 				<button
 					class="status-pill"
-					class:running={app.isRunning}
+					class:running
+					class:auto-paused={reason === 'no-setup'}
 					type="button"
 					onclick={app.toggleRun}
-					aria-label={app.isRunning ? 'Live-Ansicht stoppen' : 'Live-Ansicht starten'}
+					disabled={reason === 'no-setup'}
+					aria-label={running ? 'Live-Ansicht stoppen' : 'Live-Ansicht starten'}
 				>
-					<span class="dot" class:running={app.isRunning}></span>
-					<span class="label">{app.isRunning ? 'Läuft' : 'Gestoppt'}</span>
+					<span class="dot" class:running class:auto-paused={reason === 'no-setup'}></span>
+					<span class="label">{label}</span>
 				</button>
 			{/if}
 			<ThemeToggle />
@@ -173,6 +179,12 @@
 		color: var(--status-online);
 		border-color: color-mix(in srgb, var(--status-online) 40%, transparent);
 	}
+	.status-pill.auto-paused {
+		color: var(--status-delayed);
+		border-color: color-mix(in srgb, var(--status-delayed) 40%, transparent);
+		cursor: default;
+		opacity: 0.85;
+	}
 	.status-pill .dot {
 		width: 8px;
 		height: 8px;
@@ -182,6 +194,9 @@
 	.status-pill .dot.running {
 		background: var(--status-online);
 		animation: pulse 2s infinite;
+	}
+	.status-pill .dot.auto-paused {
+		background: var(--status-delayed);
 	}
 	.hamburger {
 		display: inline-flex;
