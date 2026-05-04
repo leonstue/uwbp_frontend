@@ -1,5 +1,6 @@
 <script>
 	import { setContext, getContext, onMount } from 'svelte';
+	import { page } from '$app/state';
 	import Poller from './Poller.svelte';
 
 	// ---- props ----
@@ -243,6 +244,12 @@
 		get approvedDeviceIds() {
 			return approvedDeviceIds;
 		},
+		get isSetup() {
+			return approvedDeviceIds.size > 0;
+		},
+		get pollingActive() {
+			return approvedDeviceIds.size > 0 || page.url.pathname.startsWith('/starten');
+		},
 		isApproved(id) {
 			return approvedDeviceIds.has(id);
 		},
@@ -282,10 +289,18 @@
 		refetchDevices: fetchDevices,
 		refetchPositions: fetchPositions
 	});
+
+	let pollingActive = $derived(
+		approvedDeviceIds.size > 0 || page.url.pathname.startsWith('/starten')
+	);
 </script>
 
-<Poller intervalMs={pollIntervalDevices} onTick={fetchDevices} />
-<Poller intervalMs={pollIntervalPositions} enabled={isRunning} onTick={fetchPositions} />
-<Poller intervalMs={5000} onTick={fetchHealth} />
+<Poller intervalMs={pollIntervalDevices} enabled={pollingActive} onTick={fetchDevices} />
+<Poller
+	intervalMs={pollIntervalPositions}
+	enabled={pollingActive && isRunning}
+	onTick={fetchPositions}
+/>
+<Poller intervalMs={5000} enabled={pollingActive} onTick={fetchHealth} />
 
 {@render children()}

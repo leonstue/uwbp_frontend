@@ -72,12 +72,10 @@
 
 	// ---- mount: setup-redirect ----
 	onMount(() => {
-		setTimeout(() => {
-			didCheckSetup = true;
-			if (app.approvedDeviceIds.size === 0 && app.rawDevices?.length > 0) {
-				goto('/starten');
-			}
-		}, 1500);
+		didCheckSetup = true;
+		if (!app.isSetup) {
+			goto('/starten');
+		}
 	});
 
 	// ---- debug: dump trail every 10s as plain text (copy/paste friendly) ----
