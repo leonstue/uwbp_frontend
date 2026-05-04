@@ -1,0 +1,17 @@
+[Unit]
+Description=UWBP Frontend Server
+Requires=uwbp-server.service
+After=uwbp-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/uwbp/frontend
+ExecStart=/usr/local/bin/node build
+Restart=always
+RestartSec=5
+User=root
+Environment=HOST=0.0.0.0
+Environment=PORT=80
+
+[Install]
+WantedBy=multi-user.target
