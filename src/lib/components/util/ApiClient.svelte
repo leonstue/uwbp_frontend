@@ -14,11 +14,11 @@
 	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
 
 	// ---- mock table geometry ----
-	const TABLE = { x: 1.6, y: 0.8, z: 0.75 };
+	const TABLE = { x: 2.0, y: 0.6, z: 0.75 };
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
-	const DEFAULT_TAG_1 = { x: 0.4, y: 0.2, z: 0.78 };
-	const DEFAULT_TAG_2 = { x: 1.2, y: 0.6, z: 0.78 };
+	const DEFAULT_TAG_1 = { x: 0.5, y: 0.15, z: 0.78 };
+	const DEFAULT_TAG_2 = { x: 1.5, y: 0.45, z: 0.78 };
 
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [

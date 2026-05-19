@@ -12,7 +12,7 @@
 	import Upload from 'lucide-svelte/icons/upload';
 
 	// ---- table geometry (must match ApiClient mock) ----
-	const TABLE = { x: 1.6, y: 0.8, z: 0.75 };
+	const TABLE = { x: 2.0, y: 0.6, z: 0.75 };
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
 
@@ -25,8 +25,8 @@
 
 	let activeTag = $state('tag1');
 	let startPos = $state({
-		[TAG_1_ID]: { x: 0.4, y: 0.2, z: 0.78 },
-		[TAG_2_ID]: { x: 1.2, y: 0.6, z: 0.78 }
+		[TAG_1_ID]: { x: 0.5, y: 0.15, z: 0.78 },
+		[TAG_2_ID]: { x: 1.5, y: 0.45, z: 0.78 }
 	});
 	let tracks = $state({ [TAG_1_ID]: [], [TAG_2_ID]: [] });
 	let recording = $state(false);
@@ -35,8 +35,8 @@
 	let previewActive = $state(false);
 	let previewStartTs = 0;
 	let liveTagPos = $state({
-		[TAG_1_ID]: { x: 0.4, y: 0.2, z: 0.78 },
-		[TAG_2_ID]: { x: 1.2, y: 0.6, z: 0.78 }
+		[TAG_1_ID]: { x: 0.5, y: 0.15, z: 0.78 },
+		[TAG_2_ID]: { x: 1.5, y: 0.45, z: 0.78 }
 	});
 	let pointerOnCanvas = $state(false);
 	let pointerWorld = $state({ x: 0, y: 0, z: 0.78 });
