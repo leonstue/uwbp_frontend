@@ -519,7 +519,7 @@
 	function onWheel(e) {
 		e.preventDefault();
 		const delta = e.deltaY > 0 ? -0.02 : 0.02;
-		pointerZ = Math.max(0.5, Math.min(1.5, pointerZ + delta));
+		pointerZ = Math.max(0.75, Math.min(1.5, pointerZ + delta));
 		pointerWorld = { ...pointerWorld, z: pointerZ };
 	}
 
@@ -552,7 +552,7 @@
 			pointerWorld = { ...pointerWorld, z: pointerZ };
 		} else if (ev.code === 'ArrowDown') {
 			ev.preventDefault();
-			pointerZ = Math.max(0.5, pointerZ - (ev.shiftKey ? 0.1 : 0.02));
+			pointerZ = Math.max(0.75, pointerZ - (ev.shiftKey ? 0.1 : 0.02));
 			pointerWorld = { ...pointerWorld, z: pointerZ };
 		} else if (ev.code === 'KeyR') {
 			ev.preventDefault();
