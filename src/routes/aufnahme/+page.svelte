@@ -43,12 +43,12 @@
 	let pointerZ = $state(0.78);
 
 	// ---- helpers ----
-	function tagId(slot) {
-		return slot === 'tag1' ? TAG_1_ID : TAG_2_ID;
+	function tagId(s) {
+		return s === 'tag1' ? TAG_1_ID : TAG_2_ID;
 	}
 
-	function tagLabel(slot) {
-		return slot === 'tag1' ? 'Tag-1' : 'Tag-2';
+	function tagLabel(s) {
+		return s === 'tag1' ? 'Tag-1' : 'Tag-2';
 	}
 
 	function loadFromStorage() {
@@ -111,8 +111,8 @@
 		}
 	}
 
-	function clearTrack(slot) {
-		const id = tagId(slot);
+	function clearTrack(s) {
+		const id = tagId(s);
 		tracks = { ...tracks, [id]: [] };
 		liveTagPos = { ...liveTagPos, [id]: { ...startPos[id] } };
 		saveToStorage();
@@ -161,11 +161,11 @@
 	}
 
 	// ---- recording ----
-	function startRecording(slot) {
+	function startRecording(s) {
 		if (previewActive) stopPreview();
-		const id = tagId(slot);
+		const id = tagId(s);
 		tracks = { ...tracks, [id]: [] };
-		recordingTag = slot;
+		recordingTag = s;
 		recording = true;
 		recordingStartTs = performance.now();
 		liveTagPos = {
@@ -342,12 +342,12 @@
 		}
 
 		// existing tracks (dim)
-		for (const slot of ['tag1', 'tag2']) {
-			const id = tagId(slot);
+		for (const s of ['tag1', 'tag2']) {
+			const id = tagId(s);
 			const track = tracks[id];
 			if (!track || track.length < 2) continue;
-			ctx.strokeStyle = slot === 'tag1' ? '#A78BFA' : '#22D3EE';
-			ctx.globalAlpha = recordingTag === slot ? 0.25 : 0.6;
+			ctx.strokeStyle = s === 'tag1' ? '#A78BFA' : '#22D3EE';
+			ctx.globalAlpha = recordingTag === s ? 0.25 : 0.6;
 			ctx.lineWidth = 1.5;
 			ctx.beginPath();
 			for (let i = 0; i < track.length; i++) {
@@ -360,11 +360,11 @@
 		ctx.globalAlpha = 1;
 
 		// current tag positions
-		for (const slot of ['tag1', 'tag2']) {
-			const id = tagId(slot);
+		for (const s of ['tag1', 'tag2']) {
+			const id = tagId(s);
 			const pos = liveTagPos[id];
 			const p = worldToCanvas(pos);
-			const color = slot === 'tag1' ? '#A78BFA' : '#22D3EE';
+			const color = s === 'tag1' ? '#A78BFA' : '#22D3EE';
 			ctx.fillStyle = color;
 			ctx.shadowColor = color;
 			ctx.shadowBlur = 12;
@@ -374,7 +374,7 @@
 			ctx.shadowBlur = 0;
 			ctx.fillStyle = theme.text;
 			ctx.font = '12px ui-sans-serif';
-			ctx.fillText(`${tagLabel(slot)} z=${pos.z.toFixed(2)}`, p.x + 12, p.y - 8);
+			ctx.fillText(`${tagLabel(s)} z=${pos.z.toFixed(2)}`, p.x + 12, p.y - 8);
 		}
 
 		// pointer crosshair
@@ -519,8 +519,8 @@
 		pointerWorld = { ...pointerWorld, z: pointerZ };
 	}
 
-	function setStartFromCurrentPointer(slot) {
-		const id = tagId(slot);
+	function setStartFromCurrentPointer(s) {
+		const id = tagId(s);
 		startPos = {
 			...startPos,
 			[id]: { x: pointerWorld.x, y: pointerWorld.y, z: pointerZ }
@@ -529,8 +529,8 @@
 		saveToStorage();
 	}
 
-	function updateStartCoord(slot, axis, value) {
-		const id = tagId(slot);
+	function updateStartCoord(s, axis, value) {
+		const id = tagId(s);
 		const next = { ...startPos[id], [axis]: Number(value) };
 		startPos = { ...startPos, [id]: next };
 		if (!recording && !previewActive) {
@@ -617,34 +617,34 @@
 		<Card>
 			{#snippet header()}<span>Startpositionen</span>{/snippet}
 			<div class="col">
-				{#each ['tag1', 'tag2'] as slot (slot)}
-					{@const id = tagId(slot)}
+				{#each ['tag1', 'tag2'] as tagSlot (tagSlot)}
+					{@const id = tagId(tagSlot)}
 					<div class="start-row">
-						<span class="lbl">{tagLabel(slot)}</span>
+						<span class="lbl">{tagLabel(tagSlot)}</span>
 						<div class="xyz">
 							<Input
 								label="x"
 								type="number"
 								step="0.01"
 								value={startPos[id].x}
-								oninput={(e) => updateStartCoord(slot, 'x', e.target.value)}
+								oninput={(e) => updateStartCoord(tagSlot, 'x', e.target.value)}
 							/>
 							<Input
 								label="y"
 								type="number"
 								step="0.01"
 								value={startPos[id].y}
-								oninput={(e) => updateStartCoord(slot, 'y', e.target.value)}
+								oninput={(e) => updateStartCoord(tagSlot, 'y', e.target.value)}
 							/>
 							<Input
 								label="z"
 								type="number"
 								step="0.01"
 								value={startPos[id].z}
-								oninput={(e) => updateStartCoord(slot, 'z', e.target.value)}
+								oninput={(e) => updateStartCoord(tagSlot, 'z', e.target.value)}
 							/>
 						</div>
-						<Button variant="ghost" size="sm" onclick={() => setStartFromCurrentPointer(slot)}>
+						<Button variant="ghost" size="sm" onclick={() => setStartFromCurrentPointer(tagSlot)}>
 							Von Maus übernehmen
 						</Button>
 					</div>
