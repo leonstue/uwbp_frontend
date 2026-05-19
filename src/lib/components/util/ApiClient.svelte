@@ -13,6 +13,13 @@
 	const ONLINE_MS = Number(import.meta.env.VITE_STATUS_ONLINE_THRESHOLD_MS ?? 1000);
 	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
 
+	// ---- mock table geometry ----
+	const TABLE = { x: 1.6, y: 0.8, z: 0.75 };
+	const TAG_1_ID = '11:22:33:00:00:01';
+	const TAG_2_ID = '11:22:33:00:00:02';
+	const DEFAULT_TAG_1 = { x: 0.4, y: 0.4, z: 0.78 };
+	const DEFAULT_TAG_2 = { x: 1.2, y: 0.4, z: 0.78 };
+
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [
 		{
@@ -20,7 +27,7 @@
 			type: 'anchor',
 			name: 'Anchor-1',
 			color: '#34D399',
-			position: { x: 0, y: 0, z: 2.5 },
+			position: { x: 0, y: 0, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
@@ -28,7 +35,7 @@
 			type: 'anchor',
 			name: 'Anchor-2',
 			color: '#4F8EFF',
-			position: { x: 5, y: 0, z: 2.5 },
+			position: { x: TABLE.x, y: 0, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
@@ -36,7 +43,7 @@
 			type: 'anchor',
 			name: 'Anchor-3',
 			color: '#FBBF24',
-			position: { x: 5, y: 4, z: 2.5 },
+			position: { x: TABLE.x, y: TABLE.y, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
@@ -44,23 +51,23 @@
 			type: 'anchor',
 			name: 'Anchor-4',
 			color: '#F472B6',
-			position: { x: 0, y: 4, z: 2.5 },
+			position: { x: 0, y: TABLE.y, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
-			id: '11:22:33:00:00:01',
+			id: TAG_1_ID,
 			type: 'tag',
 			name: 'Tag-Alpha',
 			color: '#A78BFA',
-			position: { x: 2.5, y: 2, z: 0.8 },
+			position: { ...DEFAULT_TAG_1 },
 			lastSeen: Date.now()
 		},
 		{
-			id: '11:22:33:00:00:02',
+			id: TAG_2_ID,
 			type: 'tag',
 			name: 'Tag-Beta',
 			color: '#22D3EE',
-			position: { x: 1.2, y: 1.5, z: 0.5 },
+			position: { ...DEFAULT_TAG_2 },
 			lastSeen: Date.now()
 		}
 	];
@@ -69,6 +76,112 @@
 	const mockStartTs = Date.now();
 	let mockTickHandle = null;
 	let mockTickRefcount = 0;
+
+	// ---- demo replay state ----
+	let demoRecording = null;
+	let replayActive = false;
+	let replayStartTs = 0;
+	let replayLoop = false;
+
+	function loadRecording() {
+		if (typeof localStorage === 'undefined') return null;
+		try {
+			const raw = localStorage.getItem('uwbp.demoRecording');
+			if (!raw) return null;
+			const parsed = JSON.parse(raw);
+			if (!parsed?.tracks) return null;
+			return parsed;
+		} catch {
+			return null;
+		}
+	}
+
+	function tagPositionAt(trackId, elapsedMs) {
+		const rec = demoRecording;
+		if (!rec) return null;
+		const track = rec.tracks?.[trackId];
+		if (!track || track.length === 0) {
+			return rec.startPositions?.[trackId] ?? null;
+		}
+		const duration = track[track.length - 1].t;
+		let t = elapsedMs;
+		if (replayLoop && duration > 0) {
+			t = elapsedMs % duration;
+		} else if (t >= duration) {
+			return { x: track[track.length - 1].x, y: track[track.length - 1].y, z: track[track.length - 1].z };
+		}
+		if (t <= track[0].t) return { x: track[0].x, y: track[0].y, z: track[0].z };
+		let lo = 0;
+		let hi = track.length - 1;
+		while (lo + 1 < hi) {
+			const mid = (lo + hi) >> 1;
+			if (track[mid].t <= t) lo = mid;
+			else hi = mid;
+		}
+		const a = track[lo];
+		const b = track[hi];
+		const span = Math.max(1, b.t - a.t);
+		const k = (t - a.t) / span;
+		return {
+			x: a.x + (b.x - a.x) * k,
+			y: a.y + (b.y - a.y) * k,
+			z: a.z + (b.z - a.z) * k
+		};
+	}
+
+	function startDemoReplay({ loop = false } = {}) {
+		demoRecording = loadRecording();
+		if (!demoRecording) return false;
+		replayLoop = loop;
+		replayActive = true;
+		replayStartTs = Date.now();
+		applyStartPositions();
+		return true;
+	}
+
+	function stopDemoReplay() {
+		replayActive = false;
+	}
+
+	function applyStartPositions() {
+		const sp = demoRecording?.startPositions ?? {};
+		const t1 = mockDevices.find((d) => d.id === TAG_1_ID);
+		const t2 = mockDevices.find((d) => d.id === TAG_2_ID);
+		if (t1) t1.position = { ...(sp[TAG_1_ID] ?? DEFAULT_TAG_1) };
+		if (t2) t2.position = { ...(sp[TAG_2_ID] ?? DEFAULT_TAG_2) };
+	}
+
+	function refreshFromStorage() {
+		demoRecording = loadRecording();
+		applyStartPositions();
+	}
+
+	if (typeof window !== 'undefined') {
+		window.addEventListener('uwbp:start-demo', (e) => {
+			startDemoReplay({ loop: e?.detail?.loop ?? false });
+		});
+		window.addEventListener('uwbp:stop-demo', () => stopDemoReplay());
+		window.addEventListener('uwbp:reset-tags', () => {
+			stopDemoReplay();
+			refreshFromStorage();
+		});
+		window.addEventListener('uwbp:reload-recording', () => refreshFromStorage());
+		window.addEventListener('keydown', (ev) => {
+			if (!ev.ctrlKey || !ev.shiftKey) return;
+			if (ev.code === 'KeyP') {
+				ev.preventDefault();
+				startDemoReplay({ loop: false });
+			} else if (ev.code === 'KeyL') {
+				ev.preventDefault();
+				startDemoReplay({ loop: true });
+			} else if (ev.code === 'KeyR') {
+				ev.preventDefault();
+				stopDemoReplay();
+				refreshFromStorage();
+			}
+		});
+		refreshFromStorage();
+	}
 
 	function statusFromLastSeen(lastSeen) {
 		const age = Date.now() - lastSeen;
@@ -86,31 +199,35 @@
 	}
 
 	function mockTick() {
-		const t = (Date.now() - mockStartTs) / 1000;
+		const now = Date.now();
+		const elapsed = now - replayStartTs;
 		for (const d of mockDevices) {
-			d.lastSeen = Date.now();
+			d.lastSeen = now;
 			if (d.type !== 'tag') continue;
-			const seed = parseInt(d.id.replace(/[^0-9a-f]/gi, '').slice(-4), 16);
-			const phase = (seed % 100) / 50;
-			const speed = 0.4 + (seed % 7) / 20;
-			const cx = 2.5;
-			const cy = 2;
-			const r = 1.5;
-			d.position = {
-				x: cx + Math.cos(t * speed + phase) * r,
-				y: cy + Math.sin(t * speed + phase) * r,
-				z: 0.5 + Math.sin(t * speed * 0.5 + phase) * 0.3
-			};
-			const residual = 0.05 + Math.abs(Math.sin(t + phase)) * 0.4;
+
+			if (replayActive && demoRecording) {
+				const next = tagPositionAt(d.id, elapsed);
+				if (next) {
+					d.position = { ...next };
+				}
+			}
+			// when not active, position stays at last value (start position or last replay frame)
+
+			const noise = 0.005;
+			const residual = 0.04 + Math.random() * 0.05;
 			const entry = {
-				timestamp: Date.now(),
-				position: { ...d.position },
+				timestamp: now,
+				position: {
+					x: d.position.x + (Math.random() - 0.5) * noise,
+					y: d.position.y + (Math.random() - 0.5) * noise,
+					z: d.position.z + (Math.random() - 0.5) * noise
+				},
 				residual
 			};
 			if (!mockHistory.has(d.id)) mockHistory.set(d.id, []);
 			const arr = mockHistory.get(d.id);
 			arr.push(entry);
-			const cutoff = Date.now() - 60 * 60 * 1000;
+			const cutoff = now - 60 * 60 * 1000;
 			while (arr.length && arr[0].timestamp < cutoff) arr.shift();
 		}
 	}
@@ -118,7 +235,7 @@
 	function startMockTicker() {
 		mockTickRefcount++;
 		if (mockTickHandle) return;
-		mockTickHandle = setInterval(mockTick, 100);
+		mockTickHandle = setInterval(mockTick, 50);
 	}
 
 	function stopMockTicker() {

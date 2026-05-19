@@ -168,6 +168,11 @@
 
 	function approveAllCurrent() {
 		approveDevices(devices.map((d) => d.id));
+		if (typeof window !== 'undefined' && api?.isMock) {
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('uwbp:start-demo', { detail: { loop: false } }));
+			}, 600);
+		}
 	}
 
 	function clearApproved() {
