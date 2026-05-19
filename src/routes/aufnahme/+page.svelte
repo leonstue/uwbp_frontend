@@ -553,7 +553,9 @@
 	});
 
 	onDestroy(() => {
-		cancelAnimationFrame(raf);
+		if (typeof cancelAnimationFrame !== 'undefined') {
+			cancelAnimationFrame(raf);
+		}
 	});
 
 	// ---- derived ----
