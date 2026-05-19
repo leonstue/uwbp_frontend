@@ -156,17 +156,16 @@
 		applyStartPositions();
 	}
 
-	if (typeof window !== 'undefined') {
-		window.addEventListener('uwbp:start-demo', (e) => {
-			startDemoReplay({ loop: e?.detail?.loop ?? false });
-		});
-		window.addEventListener('uwbp:stop-demo', () => stopDemoReplay());
-		window.addEventListener('uwbp:reset-tags', () => {
+	function installDemoListeners() {
+		if (typeof window === 'undefined') return () => {};
+		const onStart = (e) => startDemoReplay({ loop: e?.detail?.loop ?? false });
+		const onStop = () => stopDemoReplay();
+		const onReset = () => {
 			stopDemoReplay();
 			refreshFromStorage();
-		});
-		window.addEventListener('uwbp:reload-recording', () => refreshFromStorage());
-		window.addEventListener('keydown', (ev) => {
+		};
+		const onReload = () => refreshFromStorage();
+		const onKey = (ev) => {
 			if (!ev.ctrlKey || !ev.shiftKey) return;
 			if (ev.code === 'KeyP') {
 				ev.preventDefault();
@@ -179,8 +178,20 @@
 				stopDemoReplay();
 				refreshFromStorage();
 			}
-		});
+		};
+		window.addEventListener('uwbp:start-demo', onStart);
+		window.addEventListener('uwbp:stop-demo', onStop);
+		window.addEventListener('uwbp:reset-tags', onReset);
+		window.addEventListener('uwbp:reload-recording', onReload);
+		window.addEventListener('keydown', onKey);
 		refreshFromStorage();
+		return () => {
+			window.removeEventListener('uwbp:start-demo', onStart);
+			window.removeEventListener('uwbp:stop-demo', onStop);
+			window.removeEventListener('uwbp:reset-tags', onReset);
+			window.removeEventListener('uwbp:reload-recording', onReload);
+			window.removeEventListener('keydown', onKey);
+		};
 	}
 
 	function statusFromLastSeen(lastSeen) {
@@ -418,11 +429,11 @@
 		shutdown: () => request('/api/shutdown', { method: 'POST' })
 	};
 
-	export { IS_MOCK, startMockTicker, stopMockTicker };
+	export { IS_MOCK, startMockTicker, stopMockTicker, installDemoListeners };
 </script>
 
 <script>
-	import { setContext, onDestroy } from 'svelte';
+	import { setContext, onMount, onDestroy } from 'svelte';
 
 	// ---- props ----
 	let { children } = $props();
@@ -432,6 +443,13 @@
 		startMockTicker();
 		onDestroy(() => stopMockTicker());
 	}
+
+	// ---- demo listeners (client-only) ----
+	let removeDemoListeners;
+	onMount(() => {
+		removeDemoListeners = installDemoListeners();
+		return () => removeDemoListeners?.();
+	});
 
 	// ---- context ----
 	setContext('api', {
