@@ -172,6 +172,10 @@
 			...liveTagPos,
 			[id]: { ...startPos[id] }
 		};
+		if (!pointerOnCanvas) {
+			pointerWorld = { ...startPos[id] };
+			pointerZ = startPos[id].z;
+		}
 	}
 
 	function stopRecording() {
@@ -539,15 +543,45 @@
 		saveToStorage();
 	}
 
+	function onKeyDown(ev) {
+		const tag = ev.target?.tagName;
+		if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+		if (ev.code === 'ArrowUp') {
+			ev.preventDefault();
+			pointerZ = Math.min(1.5, pointerZ + (ev.shiftKey ? 0.1 : 0.02));
+			pointerWorld = { ...pointerWorld, z: pointerZ };
+		} else if (ev.code === 'ArrowDown') {
+			ev.preventDefault();
+			pointerZ = Math.max(0.5, pointerZ - (ev.shiftKey ? 0.1 : 0.02));
+			pointerWorld = { ...pointerWorld, z: pointerZ };
+		} else if (ev.code === 'KeyR') {
+			ev.preventDefault();
+			if (recording) stopRecording();
+			else startRecording(activeTag);
+		} else if (ev.code === 'Digit1') {
+			ev.preventDefault();
+			activeTag = 'tag1';
+		} else if (ev.code === 'Digit2') {
+			ev.preventDefault();
+			activeTag = 'tag2';
+		} else if (ev.code === 'Space') {
+			ev.preventDefault();
+			if (previewActive) stopPreview();
+			else if (!recording) startPreview();
+		}
+	}
+
 	// ---- mount ----
 	onMount(() => {
 		loadFromStorage();
 		const ro = new ResizeObserver(onResize);
 		ro.observe(wrapEl);
 		onResize();
+		window.addEventListener('keydown', onKeyDown);
 		raf = requestAnimationFrame(loop);
 		return () => {
 			ro.disconnect();
+			window.removeEventListener('keydown', onKeyDown);
 			cancelAnimationFrame(raf);
 		};
 	});
@@ -571,8 +605,14 @@
 	<div class="info">
 		<p>
 			Tisch <span class="mono">{TABLE.x} × {TABLE.y} m, Anchors auf {TABLE.z} m</span>. Klick + Halten
-			auf der Fläche zeichnet die Bewegung des aktiven Tags auf. Mausrad ändert die Höhe (z).
-			Loslassen stoppt die Aufnahme.
+			auf der Fläche zeichnet die Bewegung des aktiven Tags auf. Loslassen stoppt die Aufnahme.
+		</p>
+		<p class="hint">
+			<strong>Höhe (Z):</strong> Mausrad scrollen <em>oder</em> Pfeil hoch/runter (Shift = 10 cm-Schritte).
+			<strong>Hotkeys:</strong>
+			<span class="mono">R</span> Aufnahme start/stop,
+			<span class="mono">1</span>/<span class="mono">2</span> aktiven Tag wechseln,
+			<span class="mono">Leertaste</span> Vorschau.
 		</p>
 		<p class="hint">
 			Hat ein Tag bereits eine Aufnahme, läuft sie beim Aufnehmen des anderen Tags parallel mit
