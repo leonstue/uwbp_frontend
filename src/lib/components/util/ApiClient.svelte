@@ -15,41 +15,41 @@
 
 	// ---- mock table geometry ----
 	const TABLE = { x: 1.6, y: 0.8, z: 0.75 };
-	const TAG_1_ID = '11:22:33:00:00:01';
-	const TAG_2_ID = '11:22:33:00:00:02';
-	const DEFAULT_TAG_1 = { x: 0.4, y: 0.4, z: 0.78 };
-	const DEFAULT_TAG_2 = { x: 1.2, y: 0.4, z: 0.78 };
+	const TAG_1_ID = '24:6F:28:B1:B2:88';
+	const TAG_2_ID = '24:6F:28:C0:6A:04';
+	const DEFAULT_TAG_1 = { x: 0.4, y: 0.2, z: 0.78 };
+	const DEFAULT_TAG_2 = { x: 1.2, y: 0.6, z: 0.78 };
 
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [
 		{
-			id: 'AA:BB:CC:00:00:01',
+			id: '24:6F:28:6C:5D:48',
 			type: 'anchor',
-			name: 'Anchor-1',
+			name: 'Anchor-UL',
 			color: '#34D399',
 			position: { x: 0, y: 0, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
-			id: 'AA:BB:CC:00:00:02',
+			id: '24:6F:28:1D:84:40',
 			type: 'anchor',
-			name: 'Anchor-2',
+			name: 'Anchor-UR',
 			color: '#4F8EFF',
 			position: { x: TABLE.x, y: 0, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
-			id: 'AA:BB:CC:00:00:03',
+			id: '24:6F:28:A2:5F:E2',
 			type: 'anchor',
-			name: 'Anchor-3',
+			name: 'Anchor-OR',
 			color: '#FBBF24',
 			position: { x: TABLE.x, y: TABLE.y, z: TABLE.z },
 			lastSeen: Date.now()
 		},
 		{
-			id: 'AA:BB:CC:00:00:04',
+			id: '24:6F:28:86:81:40',
 			type: 'anchor',
-			name: 'Anchor-4',
+			name: 'Anchor-OL',
 			color: '#F472B6',
 			position: { x: 0, y: TABLE.y, z: TABLE.z },
 			lastSeen: Date.now()
