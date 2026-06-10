@@ -628,8 +628,8 @@
 			<div class="lbl">Aufnahme abspielen</div>
 			<div class="muted">
 				{useRecording
-					? 'Auf der Live-Seite wird die aufgenommene Bewegung als Daten verwendet.'
-					: 'Auf der Live-Seite werden keine Bewegungsdaten geliefert — Tags bleiben still.'}
+					? 'Im Demo-Modus ersetzt die Aufnahme die Standard-Kreisbahnen für Tag-1 und Tag-2 (Tag-3 läuft weiter am Perimeter).'
+					: 'Im Demo-Modus zeigen alle 3 Tags die Standard-Bewegung (Kreis / Perimeter).'}
 			</div>
 		</div>
 		<Toggle checked={useRecording} onchange={setUseRecording} />

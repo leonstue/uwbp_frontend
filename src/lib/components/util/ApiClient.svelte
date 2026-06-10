@@ -45,8 +45,10 @@
 	const TABLE = { x: 2.0, y: 0.6, z: 0.75 };
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
+	const TAG_3_ID = '24:6F:28:7A:9B:0C';
 	const DEFAULT_TAG_1 = { x: 0.5, y: 0.15, z: 0.78 };
 	const DEFAULT_TAG_2 = { x: 1.5, y: 0.45, z: 0.78 };
+	const DEFAULT_TAG_3 = { x: 1.0, y: 0.3, z: 0.78 };
 
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [
@@ -96,6 +98,14 @@
 			name: 'Tag-Beta',
 			color: '#22D3EE',
 			position: { ...DEFAULT_TAG_2 },
+			lastSeen: Date.now()
+		},
+		{
+			id: TAG_3_ID,
+			type: 'tag',
+			name: 'Tag-Gamma',
+			color: '#FB7185',
+			position: { ...DEFAULT_TAG_3 },
 			lastSeen: Date.now()
 		}
 	];
@@ -239,20 +249,66 @@
 		return JSON.parse(JSON.stringify(obj));
 	}
 
+	function perimeterPosition(t) {
+		// Rectangle path around the anchors with small inset
+		const inset = 0.05;
+		const w = TABLE.x - inset * 2;
+		const h = TABLE.y - inset * 2;
+		const perimeter = 2 * (w + h);
+		const speed = 0.35;
+		const dist = (t * speed) % perimeter;
+		let x;
+		let y;
+		if (dist < w) {
+			x = inset + dist;
+			y = inset;
+		} else if (dist < w + h) {
+			x = inset + w;
+			y = inset + (dist - w);
+		} else if (dist < 2 * w + h) {
+			x = inset + w - (dist - w - h);
+			y = inset + h;
+		} else {
+			x = inset;
+			y = inset + h - (dist - 2 * w - h);
+		}
+		return { x, y, z: 0.8 };
+	}
+
+	function circlePosition(seed, t) {
+		const phase = (seed % 100) / 50;
+		const speed = 0.45 + (seed % 5) / 18;
+		const cx = TABLE.x / 2 + (seed % 3 === 0 ? -0.2 : 0.2);
+		const cy = TABLE.y / 2;
+		const rx = TABLE.x / 4;
+		const ry = TABLE.y / 4;
+		return {
+			x: cx + Math.cos(t * speed + phase) * rx,
+			y: cy + Math.sin(t * speed + phase) * ry,
+			z: 0.78 + Math.sin(t * speed * 0.5 + phase) * 0.08
+		};
+	}
+
 	function mockTick() {
 		const now = Date.now();
 		const elapsed = now - replayStartTs;
+		const tSec = (now - mockStartTs) / 1000;
 		for (const d of mockDevices) {
 			d.lastSeen = now;
 			if (d.type !== 'tag') continue;
 
-			if (replayActive && demoRecording) {
+			const recordable = d.id === TAG_1_ID || d.id === TAG_2_ID;
+			const useReplay = recordable && replayActive && demoRecording;
+
+			if (useReplay) {
 				const next = tagPositionAt(d.id, elapsed);
-				if (next) {
-					d.position = { ...next };
-				}
+				if (next) d.position = { ...next };
+			} else if (d.id === TAG_3_ID) {
+				d.position = perimeterPosition(tSec);
+			} else {
+				const seed = parseInt(d.id.replace(/[^0-9a-f]/gi, '').slice(-4), 16) || 1;
+				d.position = circlePosition(seed, tSec);
 			}
-			// when not active, position stays at last value (start position or last replay frame)
 
 			const noise = 0.005;
 			const residual = 0.04 + Math.random() * 0.05;

@@ -133,7 +133,7 @@
 				<div class="lbl">Simulierte Daten verwenden</div>
 				<div class="muted">
 					{api.isMock
-						? 'Aktiv — keine Backend-Calls, Mock-Tags laufen lokal.'
+						? 'Aktiv — 3 simulierte Tags (Kreisbahnen + Perimeter-Tour), keine Backend-Calls.'
 						: api.realAvailable
 							? 'Aus — echte Backend-Daten werden verwendet.'
 							: 'Aus — Achtung, kein Backend konfiguriert.'}
