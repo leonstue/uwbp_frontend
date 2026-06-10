@@ -133,6 +133,24 @@
 		return out;
 	});
 
+	let tagsAtCursor = $derived.by(() => {
+		if (cursorTs === null) return [];
+		const out = [];
+		for (const tag of app.tags) {
+			if (!selectedTagIds.has(tag.id)) continue;
+			const entries = trailsData.get(tag.id) ?? [];
+			if (entries.length === 0) continue;
+			let cursor = null;
+			for (const p of entries) {
+				if (p.timestamp <= cursorTs) cursor = p;
+				else break;
+			}
+			if (!cursor) cursor = entries[0];
+			out.push({ ...tag, position: cursor.position });
+		}
+		return out;
+	});
+
 	// ---- actions ----
 	function toggleTag(id) {
 		const next = new Set(selectedTagIds);
@@ -294,7 +312,7 @@
 		</div>
 		<RoomCanvas
 			anchors={app.anchors}
-			tags={[]}
+			tags={tagsAtCursor}
 			{trails}
 			{mode}
 			{cursorTs}
