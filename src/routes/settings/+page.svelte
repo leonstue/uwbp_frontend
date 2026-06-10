@@ -66,6 +66,27 @@
 		});
 		setTimeout(() => goto('/starten'), 400);
 	}
+
+	function applyTagCount(n) {
+		api.setTagCount(n);
+		app.clearApproved();
+		app.clearHistoryBuffer();
+		api.resetMockState();
+		toast.push({ type: 'info', message: `Tag-Anzahl auf ${n} gesetzt — Wizard erneut durchlaufen.` });
+		setTimeout(() => goto('/starten'), 400);
+	}
+
+	function freshWizard() {
+		if (api.isMock) api.resetMockState();
+		app.clearApproved();
+		app.clearHistoryBuffer();
+		goto('/starten');
+	}
+
+	let tagCountInput = $state(api.tagCount);
+	$effect(() => {
+		tagCountInput = api.tagCount;
+	});
 </script>
 
 <PageHeader title="Einstellungen" subtitle="System-Konfiguration und Präferenzen" />
@@ -133,7 +154,7 @@
 				<div class="lbl">Simulierte Daten verwenden</div>
 				<div class="muted">
 					{api.isMock
-						? 'Aktiv — 3 simulierte Tags (Kreisbahnen + Perimeter-Tour), keine Backend-Calls.'
+						? `Aktiv — ${api.tagCount} simulierte Tag${api.tagCount === 1 ? '' : 's'}, keine Backend-Calls.`
 						: api.realAvailable
 							? 'Aus — echte Backend-Daten werden verwendet.'
 							: 'Aus — Achtung, kein Backend konfiguriert.'}
@@ -141,9 +162,26 @@
 			</div>
 			<Toggle checked={api.isMock} onchange={toggleDemoMode} />
 		</div>
+		{#if api.isMock}
+			<div class="col">
+				<Slider
+					label="Anzahl Tags"
+					bind:value={tagCountInput}
+					min={1}
+					max={4}
+					step={1}
+					unit=""
+					onchange={() => applyTagCount(tagCountInput)}
+				/>
+				<p class="hint">
+					Bei Änderung werden Geräte-Konfiguration, Freigabe und History-Buffer auf Default
+					zurückgesetzt. Du wirst zum Wizard weitergeleitet.
+				</p>
+			</div>
+		{/if}
 		<p class="hint">
-			Beim Umschalten werden die Geräte-Freigabe und der History-Buffer zurückgesetzt. Du wirst zum
-			Wizard weitergeleitet.
+			Beim Umschalten des Demo-Modus werden Geräte-Freigabe, gespeicherte Konfiguration und
+			History zurückgesetzt.
 		</p>
 	</Card>
 
@@ -178,7 +216,7 @@
 		<div class="col">
 			<div class="row-between">
 				<span>Wizard „Starten" erneut öffnen</span>
-				<Button variant="secondary" size="sm" onclick={() => goto('/starten')}>
+				<Button variant="secondary" size="sm" onclick={freshWizard}>
 					<RotateCcw size={14} /> Öffnen
 				</Button>
 			</div>

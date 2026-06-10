@@ -46,9 +46,36 @@
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
 	const TAG_3_ID = '24:6F:28:7A:9B:0C';
+	const TAG_4_ID = '24:6F:28:4F:E8:21';
 	const DEFAULT_TAG_1 = { x: 0.5, y: 0.15, z: 0.78 };
 	const DEFAULT_TAG_2 = { x: 1.5, y: 0.45, z: 0.78 };
 	const DEFAULT_TAG_3 = { x: 1.0, y: 0.3, z: 0.78 };
+	const DEFAULT_TAG_4 = { x: 1.0, y: 0.5, z: 0.78 };
+	const TAG_IDS_ORDERED = [TAG_1_ID, TAG_2_ID, TAG_3_ID, TAG_4_ID];
+
+	const DEFAULT_TAG_COUNT = 3;
+	let mockTagCount = DEFAULT_TAG_COUNT;
+	function readTagCount() {
+		if (typeof localStorage === 'undefined') return DEFAULT_TAG_COUNT;
+		const v = Number(localStorage.getItem('uwbp.mockTagCount'));
+		if (Number.isInteger(v) && v >= 1 && v <= 4) return v;
+		return DEFAULT_TAG_COUNT;
+	}
+	mockTagCount = readTagCount();
+
+	function setTagCount(n) {
+		const c = Math.max(1, Math.min(4, Number(n) || DEFAULT_TAG_COUNT));
+		mockTagCount = c;
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('uwbp.mockTagCount', String(c));
+		}
+		if (typeof window !== 'undefined') {
+			window.dispatchEvent(new CustomEvent('uwbp:mock-tag-count-changed', { detail: { count: c } }));
+		}
+	}
+	function getTagCount() {
+		return mockTagCount;
+	}
 
 	// ---- mock state (module-level so generator persists across mounts) ----
 	const mockDevices = [
@@ -107,11 +134,104 @@
 			color: '#FB7185',
 			position: { ...DEFAULT_TAG_3 },
 			lastSeen: Date.now()
+		},
+		{
+			id: TAG_4_ID,
+			type: 'tag',
+			name: 'Tag-Delta',
+			color: '#FCD34D',
+			position: { ...DEFAULT_TAG_4 },
+			lastSeen: Date.now()
 		}
 	];
 
+	// snapshot defaults so we can reset
+	const DEFAULT_MOCK_DEVICES = JSON.parse(JSON.stringify(mockDevices));
+
+	function saveMockDevices() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			const minimal = mockDevices.map((d) => ({
+				id: d.id,
+				name: d.name,
+				color: d.color,
+				position: d.position
+			}));
+			localStorage.setItem('uwbp.mockDevices', JSON.stringify(minimal));
+		} catch {
+			// ignore
+		}
+	}
+
+	function loadMockDevices() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			const raw = localStorage.getItem('uwbp.mockDevices');
+			if (!raw) return;
+			const arr = JSON.parse(raw);
+			for (const persisted of arr) {
+				const dev = mockDevices.find((d) => d.id === persisted.id);
+				if (!dev) continue;
+				if (persisted.name) dev.name = persisted.name;
+				if (persisted.color) dev.color = persisted.color;
+				if (persisted.position) dev.position = { ...persisted.position };
+			}
+		} catch {
+			// ignore
+		}
+	}
+
+	function saveMockHistoryLocal() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			const out = {};
+			const cutoff = Date.now() - 10 * 60 * 1000;
+			for (const [id, arr] of mockHistory) {
+				const trimmed = arr.filter((e) => e.timestamp >= cutoff);
+				if (trimmed.length) out[id] = trimmed;
+			}
+			localStorage.setItem('uwbp.mockHistory', JSON.stringify(out));
+		} catch {
+			// ignore
+		}
+	}
+
+	function loadMockHistoryLocal() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			const raw = localStorage.getItem('uwbp.mockHistory');
+			if (!raw) return;
+			const obj = JSON.parse(raw);
+			for (const id of Object.keys(obj)) {
+				mockHistory.set(id, obj[id]);
+			}
+		} catch {
+			// ignore
+		}
+	}
+
+	function resetMockState() {
+		for (const def of DEFAULT_MOCK_DEVICES) {
+			const dev = mockDevices.find((d) => d.id === def.id);
+			if (dev) {
+				dev.name = def.name;
+				dev.color = def.color;
+				dev.position = { ...def.position };
+			}
+		}
+		mockHistory.clear();
+		if (typeof localStorage !== 'undefined') {
+			localStorage.removeItem('uwbp.mockDevices');
+			localStorage.removeItem('uwbp.mockHistory');
+		}
+	}
+
 	const mockHistory = new Map();
 	const mockStartTs = Date.now();
+
+	// hydrate from localStorage
+	loadMockDevices();
+	loadMockHistoryLocal();
 	let mockTickHandle = null;
 	let mockTickRefcount = 0;
 
@@ -219,18 +339,30 @@
 				refreshFromStorage();
 			}
 		};
+		const onVisibility = () => {
+			if (document.visibilityState === 'hidden') {
+				saveMockHistoryLocal();
+			}
+		};
+		const historyTimer = setInterval(saveMockHistoryLocal, 15000);
+
 		window.addEventListener('uwbp:start-demo', onStart);
 		window.addEventListener('uwbp:stop-demo', onStop);
 		window.addEventListener('uwbp:reset-tags', onReset);
 		window.addEventListener('uwbp:reload-recording', onReload);
 		window.addEventListener('keydown', onKey);
+		window.addEventListener('visibilitychange', onVisibility);
+		window.addEventListener('beforeunload', saveMockHistoryLocal);
 		refreshFromStorage();
 		return () => {
+			clearInterval(historyTimer);
 			window.removeEventListener('uwbp:start-demo', onStart);
 			window.removeEventListener('uwbp:stop-demo', onStop);
 			window.removeEventListener('uwbp:reset-tags', onReset);
 			window.removeEventListener('uwbp:reload-recording', onReload);
 			window.removeEventListener('keydown', onKey);
+			window.removeEventListener('visibilitychange', onVisibility);
+			window.removeEventListener('beforeunload', saveMockHistoryLocal);
 		};
 	}
 
@@ -289,6 +421,20 @@
 		};
 	}
 
+	function figureEightPosition(t) {
+		const cx = TABLE.x / 2;
+		const cy = TABLE.y / 2;
+		const ax = TABLE.x / 3;
+		const ay = TABLE.y / 3;
+		const speed = 0.55;
+		const u = t * speed;
+		return {
+			x: cx + Math.sin(u) * ax,
+			y: cy + (Math.sin(u * 2) * ay) / 2,
+			z: 0.78 + Math.sin(u * 0.7) * 0.1
+		};
+	}
+
 	function mockTick() {
 		const now = Date.now();
 		const elapsed = now - replayStartTs;
@@ -305,6 +451,8 @@
 				if (next) d.position = { ...next };
 			} else if (d.id === TAG_3_ID) {
 				d.position = perimeterPosition(tSec);
+			} else if (d.id === TAG_4_ID) {
+				d.position = figureEightPosition(tSec);
 			} else {
 				const seed = parseInt(d.id.replace(/[^0-9a-f]/gi, '').slice(-4), 16) || 1;
 				d.position = circlePosition(seed, tSec);
@@ -378,12 +526,17 @@
 			});
 		}
 
+		const activeTagIds = new Set(TAG_IDS_ORDERED.slice(0, mockTagCount));
+		const visibleDevices = mockDevices.filter(
+			(d) => d.type !== 'tag' || activeTagIds.has(d.id)
+		);
+
 		if (path === '/api/devices' && method === 'GET') {
-			return Promise.resolve({ devices: mockDevices.map(annotateDevice).map(clone) });
+			return Promise.resolve({ devices: visibleDevices.map(annotateDevice).map(clone) });
 		}
 		if (path === '/api/anchors' && method === 'GET') {
 			return Promise.resolve({
-				anchors: mockDevices
+				anchors: visibleDevices
 					.filter((d) => d.type === 'anchor')
 					.map(annotateDevice)
 					.map(clone)
@@ -391,7 +544,7 @@
 		}
 		if (path === '/api/tags' && method === 'GET') {
 			return Promise.resolve({
-				tags: mockDevices
+				tags: visibleDevices
 					.filter((d) => d.type === 'tag')
 					.map(annotateDevice)
 					.map(clone)
@@ -399,7 +552,7 @@
 		}
 		if (path === '/api/positions' && method === 'GET') {
 			return Promise.resolve({
-				positions: mockDevices
+				positions: visibleDevices
 					.filter((d) => d.type === 'tag')
 					.map((d) => ({
 						tagId: d.id,
@@ -419,11 +572,13 @@
 			if (method === 'PUT') {
 				if (body?.name !== undefined) mockDevices[idx].name = body.name;
 				if (body?.color !== undefined) mockDevices[idx].color = body.color;
+				saveMockDevices();
 				return Promise.resolve(annotateDevice(clone(mockDevices[idx])));
 			}
 			if (method === 'DELETE') {
 				mockDevices.splice(idx, 1);
 				mockHistory.delete(id);
+				saveMockDevices();
 				return Promise.resolve({ ok: true });
 			}
 		}
@@ -434,6 +589,7 @@
 			const dev = mockDevices.find((d) => d.id === id && d.type === 'anchor');
 			if (!dev) return Promise.reject(new Error(`API 404: ${id}`));
 			dev.position = { x: Number(body.x), y: Number(body.y), z: Number(body.z) };
+			saveMockDevices();
 			return Promise.resolve(annotateDevice(clone(dev)));
 		}
 
@@ -536,7 +692,10 @@
 		installDemoListeners,
 		setDemoMode,
 		isDemoActive,
-		isRealAvailable
+		isRealAvailable,
+		setTagCount,
+		getTagCount,
+		resetMockState
 	};
 </script>
 
@@ -548,6 +707,7 @@
 
 	// ---- reactive mock flag ----
 	let demoActive = $state(isDemoActive());
+	let tagCount = $state(getTagCount());
 
 	// ---- mock ticker lifecycle (follows demo flag) ----
 	let tickerRunning = false;
@@ -583,6 +743,18 @@
 	function toggleDemo(v) {
 		setDemoMode(v);
 		demoActive = v;
+		if (!v) {
+			resetMockState();
+		}
+	}
+
+	function applyTagCount(n) {
+		setTagCount(n);
+		tagCount = getTagCount();
+	}
+
+	function resetForFreshWizard() {
+		resetMockState();
 	}
 
 	// ---- context ----
@@ -593,7 +765,12 @@
 		get realAvailable() {
 			return isRealAvailable();
 		},
+		get tagCount() {
+			return tagCount;
+		},
 		setDemo: toggleDemo,
+		setTagCount: applyTagCount,
+		resetMockState: resetForFreshWizard,
 		request,
 		devices: devicesApi,
 		anchors: anchorsApi,
