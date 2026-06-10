@@ -12,7 +12,7 @@
 	import Upload from 'lucide-svelte/icons/upload';
 
 	// ---- table geometry (must match ApiClient mock) ----
-	const TABLE = { x: 2.0, y: 0.6, z: 0.75 };
+	const TABLE = { x: 2.0, y: 2.0, z: 1.0 };
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
 
@@ -25,8 +25,8 @@
 
 	let activeTag = $state('tag1');
 	let startPos = $state({
-		[TAG_1_ID]: { x: 0.5, y: 0.15, z: 0.78 },
-		[TAG_2_ID]: { x: 1.5, y: 0.45, z: 0.78 }
+		[TAG_1_ID]: { x: 0.5, y: 0.5, z: 0.5 },
+		[TAG_2_ID]: { x: 1.5, y: 1.5, z: 0.5 }
 	});
 	let tracks = $state({ [TAG_1_ID]: [], [TAG_2_ID]: [] });
 	let recording = $state(false);
@@ -35,12 +35,12 @@
 	let previewActive = $state(false);
 	let previewStartTs = 0;
 	let liveTagPos = $state({
-		[TAG_1_ID]: { x: 0.5, y: 0.15, z: 0.78 },
-		[TAG_2_ID]: { x: 1.5, y: 0.45, z: 0.78 }
+		[TAG_1_ID]: { x: 0.5, y: 0.5, z: 0.5 },
+		[TAG_2_ID]: { x: 1.5, y: 1.5, z: 0.5 }
 	});
 	let pointerOnCanvas = $state(false);
-	let pointerWorld = $state({ x: 0, y: 0, z: 0.78 });
-	let pointerZ = $state(0.78);
+	let pointerWorld = $state({ x: 0, y: 0, z: 0.5 });
+	let pointerZ = $state(0.5);
 	let useRecording = $state(true);
 
 	function loadUseRecording() {
@@ -116,8 +116,8 @@
 		if (!confirm('Komplette Aufnahme löschen?')) return;
 		tracks = { [TAG_1_ID]: [], [TAG_2_ID]: [] };
 		startPos = {
-			[TAG_1_ID]: { x: 0.4, y: 0.2, z: 0.78 },
-			[TAG_2_ID]: { x: 1.2, y: 0.6, z: 0.78 }
+			[TAG_1_ID]: { x: 0.5, y: 0.5, z: 0.5 },
+			[TAG_2_ID]: { x: 1.5, y: 1.5, z: 0.5 }
 		};
 		liveTagPos = {
 			[TAG_1_ID]: { ...startPos[TAG_1_ID] },
@@ -539,7 +539,7 @@
 	function onWheel(e) {
 		e.preventDefault();
 		const delta = e.deltaY > 0 ? -0.02 : 0.02;
-		pointerZ = Math.max(0.75, Math.min(1.5, pointerZ + delta));
+		pointerZ = Math.max(0, Math.min(0.95, pointerZ + delta));
 		pointerWorld = { ...pointerWorld, z: pointerZ };
 	}
 
@@ -568,11 +568,11 @@
 		if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 		if (ev.code === 'ArrowUp') {
 			ev.preventDefault();
-			pointerZ = Math.min(1.5, pointerZ + (ev.shiftKey ? 0.1 : 0.02));
+			pointerZ = Math.min(0.95, pointerZ + (ev.shiftKey ? 0.1 : 0.02));
 			pointerWorld = { ...pointerWorld, z: pointerZ };
 		} else if (ev.code === 'ArrowDown') {
 			ev.preventDefault();
-			pointerZ = Math.max(0.75, pointerZ - (ev.shiftKey ? 0.1 : 0.02));
+			pointerZ = Math.max(0, pointerZ - (ev.shiftKey ? 0.1 : 0.02));
 			pointerWorld = { ...pointerWorld, z: pointerZ };
 		} else if (ev.code === 'KeyR') {
 			ev.preventDefault();

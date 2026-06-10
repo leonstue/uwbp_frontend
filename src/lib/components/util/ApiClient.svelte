@@ -42,15 +42,15 @@
 	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
 
 	// ---- mock table geometry ----
-	const TABLE = { x: 2.0, y: 0.6, z: 0.75 };
+	const TABLE = { x: 2.0, y: 2.0, z: 1.0 };
 	const TAG_1_ID = '24:6F:28:B1:B2:88';
 	const TAG_2_ID = '24:6F:28:C0:6A:04';
 	const TAG_3_ID = '24:6F:28:7A:9B:0C';
 	const TAG_4_ID = '24:6F:28:4F:E8:21';
-	const DEFAULT_TAG_1 = { x: 0.5, y: 0.15, z: 0.78 };
-	const DEFAULT_TAG_2 = { x: 1.5, y: 0.45, z: 0.78 };
-	const DEFAULT_TAG_3 = { x: 1.0, y: 0.3, z: 0.78 };
-	const DEFAULT_TAG_4 = { x: 1.0, y: 0.5, z: 0.78 };
+	const DEFAULT_TAG_1 = { x: 0.5, y: 0.5, z: 0.5 };
+	const DEFAULT_TAG_2 = { x: 1.5, y: 1.5, z: 0.5 };
+	const DEFAULT_TAG_3 = { x: 1.0, y: 1.0, z: 0.5 };
+	const DEFAULT_TAG_4 = { x: 1.0, y: 0.5, z: 0.5 };
 	const TAG_IDS_ORDERED = [TAG_1_ID, TAG_2_ID, TAG_3_ID, TAG_4_ID];
 
 	const DEFAULT_TAG_COUNT = 3;
