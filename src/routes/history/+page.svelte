@@ -11,6 +11,7 @@
 	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import PlaybackControls from '$lib/components/util/PlaybackControls.svelte';
 	import Download from 'lucide-svelte/icons/download';
+	import Spline from 'lucide-svelte/icons/spline';
 
 	// ---- context ----
 	const api = getContext('api');
@@ -20,6 +21,7 @@
 	// ---- state ----
 	let mode = $state('xy');
 	let selectedTagIds = $state(new Set());
+	let trailHiddenIds = $state(new Set());
 	let rangePreset = $state('5m');
 	let customFrom = $state(null);
 	let customTo = $state(null);
@@ -111,6 +113,7 @@
 		const minDistSq = TRAIL_MIN_DIST_M * TRAIL_MIN_DIST_M;
 		for (const tag of app.tags) {
 			if (!selectedTagIds.has(tag.id)) continue;
+			if (trailHiddenIds.has(tag.id)) continue;
 			const entries = trailsData.get(tag.id) ?? [];
 			const filtered = [];
 			let last = null;
@@ -132,6 +135,13 @@
 		}
 		return out;
 	});
+
+	function toggleTrail(id) {
+		const next = new Set(trailHiddenIds);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		trailHiddenIds = next;
+	}
 
 	let tagsAtCursor = $derived.by(() => {
 		if (cursorTs === null) return [];
@@ -283,14 +293,29 @@
 				<span class="lbl">Tags</span>
 				<div class="tags">
 					{#each app.tags as tag (tag.id)}
-						<Toggle
-							checked={selectedTagIds.has(tag.id)}
-							onchange={() => toggleTag(tag.id)}
-							size="sm"
-						>
-							<DeviceColorDot color={tag.color} />
-							<span class="tag-name">{tag.name}</span>
-						</Toggle>
+						{@const selected = selectedTagIds.has(tag.id)}
+						{@const trailShown = selected && !trailHiddenIds.has(tag.id)}
+						<div class="tag-row">
+							<Toggle
+								checked={selected}
+								onchange={() => toggleTag(tag.id)}
+								size="sm"
+							>
+								<DeviceColorDot color={tag.color} />
+								<span class="tag-name">{tag.name}</span>
+							</Toggle>
+							<button
+								type="button"
+								class="trail-btn"
+								class:active={trailShown}
+								disabled={!selected}
+								title={trailShown ? 'Trail ausblenden' : 'Trail anzeigen'}
+								aria-label={trailShown ? 'Trail ausblenden' : 'Trail anzeigen'}
+								onclick={() => toggleTrail(tag.id)}
+							>
+								<Spline size={14} />
+							</button>
+						</div>
 					{/each}
 					{#if app.tags.length === 0}
 						<p class="empty">Keine Tags verfügbar.</p>
@@ -413,6 +438,37 @@
 	}
 	.tag-name {
 		font-size: var(--text-sm);
+	}
+	.tag-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.trail-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		color: var(--text-muted);
+		background: var(--bg-secondary);
+		transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+	}
+	.trail-btn:hover:not(:disabled) {
+		color: var(--text-primary);
+		border-color: var(--border-strong);
+	}
+	.trail-btn.active {
+		color: var(--accent);
+		border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+		background: var(--accent-glow);
+	}
+	.trail-btn:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
 	}
 	.empty {
 		font-size: var(--text-sm);
