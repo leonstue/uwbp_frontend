@@ -8,7 +8,35 @@
 		return b;
 	}
 	const API_BASE = normalizeBase(RAW_API_BASE);
-	const IS_MOCK = !API_BASE && RAW_API_BASE === '';
+	const DEFAULT_IS_MOCK = !API_BASE && RAW_API_BASE === '';
+
+	// runtime-toggleable demo flag
+	let demoModeActive = DEFAULT_IS_MOCK;
+
+	function readPersistedDemo() {
+		if (typeof localStorage === 'undefined') return DEFAULT_IS_MOCK;
+		const v = localStorage.getItem('uwbp.demoMode');
+		if (v === '1') return true;
+		if (v === '0') return false;
+		return DEFAULT_IS_MOCK;
+	}
+
+	function persistDemo(v) {
+		if (typeof localStorage === 'undefined') return;
+		localStorage.setItem('uwbp.demoMode', v ? '1' : '0');
+	}
+
+	demoModeActive = readPersistedDemo();
+
+	function setDemoMode(v) {
+		const next = !!v;
+		if (next === demoModeActive) return;
+		demoModeActive = next;
+		persistDemo(next);
+		if (typeof window !== 'undefined') {
+			window.dispatchEvent(new CustomEvent('uwbp:demo-changed', { detail: { demo: next } }));
+		}
+	}
 	const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_REQUEST_TIMEOUT_MS ?? 1500);
 	const ONLINE_MS = Number(import.meta.env.VITE_STATUS_ONLINE_THRESHOLD_MS ?? 1000);
 	const DELAYED_MS = Number(import.meta.env.VITE_STATUS_DELAYED_THRESHOLD_MS ?? 5000);
@@ -391,7 +419,21 @@
 	}
 
 	function request(path, init) {
-		return IS_MOCK ? mockRequest(path, init) : realRequest(path, init);
+		if (demoModeActive) return mockRequest(path, init);
+		if (!API_BASE) {
+			return Promise.reject(
+				new Error('Kein Backend konfiguriert (VITE_API_URL fehlt). Demo-Modus aktivieren.')
+			);
+		}
+		return realRequest(path, init);
+	}
+
+	function isDemoActive() {
+		return demoModeActive;
+	}
+
+	function isRealAvailable() {
+		return !!API_BASE;
 	}
 
 	// ---- endpoint groups ----
@@ -429,7 +471,15 @@
 		shutdown: () => request('/api/shutdown', { method: 'POST' })
 	};
 
-	export { IS_MOCK, startMockTicker, stopMockTicker, installDemoListeners };
+	export {
+		DEFAULT_IS_MOCK,
+		startMockTicker,
+		stopMockTicker,
+		installDemoListeners,
+		setDemoMode,
+		isDemoActive,
+		isRealAvailable
+	};
 </script>
 
 <script>
@@ -438,22 +488,54 @@
 	// ---- props ----
 	let { children } = $props();
 
-	// ---- mock lifecycle ----
-	if (IS_MOCK) {
-		startMockTicker();
-		onDestroy(() => stopMockTicker());
-	}
+	// ---- reactive mock flag ----
+	let demoActive = $state(isDemoActive());
+
+	// ---- mock ticker lifecycle (follows demo flag) ----
+	let tickerRunning = false;
+	$effect(() => {
+		if (demoActive && !tickerRunning) {
+			startMockTicker();
+			tickerRunning = true;
+		} else if (!demoActive && tickerRunning) {
+			stopMockTicker();
+			tickerRunning = false;
+		}
+	});
+	onDestroy(() => {
+		if (tickerRunning) stopMockTicker();
+	});
 
 	// ---- demo listeners (client-only) ----
 	let removeDemoListeners;
+	let removeDemoChangedListener;
 	onMount(() => {
 		removeDemoListeners = installDemoListeners();
-		return () => removeDemoListeners?.();
+		const onChanged = (e) => {
+			demoActive = !!e.detail?.demo;
+		};
+		window.addEventListener('uwbp:demo-changed', onChanged);
+		removeDemoChangedListener = () => window.removeEventListener('uwbp:demo-changed', onChanged);
+		return () => {
+			removeDemoListeners?.();
+			removeDemoChangedListener?.();
+		};
 	});
+
+	function toggleDemo(v) {
+		setDemoMode(v);
+		demoActive = v;
+	}
 
 	// ---- context ----
 	setContext('api', {
-		isMock: IS_MOCK,
+		get isMock() {
+			return demoActive;
+		},
+		get realAvailable() {
+			return isRealAvailable();
+		},
+		setDemo: toggleDemo,
 		request,
 		devices: devicesApi,
 		anchors: anchorsApi,

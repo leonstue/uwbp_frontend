@@ -7,6 +7,7 @@
 	import Slider from '$lib/components/ui/Slider.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
+	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import RotateCcw from 'lucide-svelte/icons/rotate-ccw';
 	import Trash2 from 'lucide-svelte/icons/trash-2';
 	import Power from 'lucide-svelte/icons/power';
@@ -51,6 +52,19 @@
 		} catch (e) {
 			toast.push({ type: 'error', message: 'Fehler: ' + e.message });
 		}
+	}
+
+	function toggleDemoMode(v) {
+		api.setDemo(v);
+		app.clearApproved();
+		app.clearHistoryBuffer();
+		toast.push({
+			type: 'info',
+			message: v
+				? 'Demo-Modus aktiviert — Wizard erneut durchlaufen.'
+				: 'Live-Modus aktiviert — Wizard erneut durchlaufen.'
+		});
+		setTimeout(() => goto('/starten'), 400);
 	}
 </script>
 
@@ -110,6 +124,27 @@
 			</div>
 			<ThemeToggle />
 		</div>
+	</Card>
+
+	<Card>
+		{#snippet header()}<span>Demo-Modus</span>{/snippet}
+		<div class="row-between">
+			<div>
+				<div class="lbl">Simulierte Daten verwenden</div>
+				<div class="muted">
+					{api.isMock
+						? 'Aktiv — keine Backend-Calls, Mock-Tags laufen lokal.'
+						: api.realAvailable
+							? 'Aus — echte Backend-Daten werden verwendet.'
+							: 'Aus — Achtung, kein Backend konfiguriert.'}
+				</div>
+			</div>
+			<Toggle checked={api.isMock} onchange={toggleDemoMode} />
+		</div>
+		<p class="hint">
+			Beim Umschalten werden die Geräte-Freigabe und der History-Buffer zurückgesetzt. Du wirst zum
+			Wizard weitergeleitet.
+		</p>
 	</Card>
 
 	<Card>
@@ -237,6 +272,12 @@
 	.muted {
 		color: var(--text-muted);
 		font-size: var(--text-xs);
+	}
+	.hint {
+		margin: 0;
+		color: var(--text-muted);
+		font-size: var(--text-xs);
+		line-height: 1.5;
 	}
 	.kv-list {
 		margin: 0;
