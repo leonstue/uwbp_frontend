@@ -235,9 +235,10 @@
 
 	$effect(() => {
 		void rangePreset;
+		if (rangePreset === 'custom' && (!customFrom || !customTo)) return;
 		void customFrom;
 		void customTo;
-		dirty = true;
+		untrack(() => refresh());
 	});
 
 	$effect(() => {
