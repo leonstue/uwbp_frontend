@@ -8,6 +8,16 @@
 
 <div class="list-desktop">
 	<table>
+		<colgroup>
+			<col style="width: 32px" />
+			<col style="width: 160px" />
+			<col style="width: 84px" />
+			<col style="width: auto" />
+			<col style="width: 110px" />
+			<col style="width: 140px" />
+			<col style="width: 180px" />
+			<col style="width: 56px" />
+		</colgroup>
 		<thead>
 			<tr>
 				<th></th>
@@ -50,6 +60,13 @@
 	table {
 		width: 100%;
 		border-collapse: collapse;
+		table-layout: fixed;
+	}
+	td,
+	th {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	thead {
 		background: var(--bg-tertiary);

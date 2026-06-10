@@ -12,12 +12,20 @@
 	// ---- state ----
 	let nameDraft = $state('');
 	let colorDraft = $state('');
+	let lastSeenName = '';
+	let lastSeenColor = '';
 	let saveTimer;
 
-	// ---- effects ----
+	// ---- effects: only sync when device's name/color actually changes ----
 	$effect(() => {
-		nameDraft = device.name;
-		colorDraft = device.color;
+		if (device.name !== lastSeenName) {
+			lastSeenName = device.name;
+			nameDraft = device.name;
+		}
+		if (device.color !== lastSeenColor) {
+			lastSeenColor = device.color;
+			colorDraft = device.color;
+		}
 	});
 
 	// ---- actions ----
