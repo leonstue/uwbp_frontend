@@ -114,6 +114,8 @@
 	function loadRecording() {
 		if (typeof localStorage === 'undefined') return null;
 		try {
+			const enabled = localStorage.getItem('uwbp.useDemoRecording');
+			if (enabled === '0') return null;
 			const raw = localStorage.getItem('uwbp.demoRecording');
 			if (!raw) return null;
 			const parsed = JSON.parse(raw);

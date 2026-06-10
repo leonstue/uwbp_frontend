@@ -41,6 +41,26 @@
 	let pointerOnCanvas = $state(false);
 	let pointerWorld = $state({ x: 0, y: 0, z: 0.78 });
 	let pointerZ = $state(0.78);
+	let useRecording = $state(true);
+
+	function loadUseRecording() {
+		try {
+			const v = localStorage.getItem('uwbp.useDemoRecording');
+			useRecording = v !== '0';
+		} catch {
+			useRecording = true;
+		}
+	}
+
+	function setUseRecording(v) {
+		useRecording = !!v;
+		try {
+			localStorage.setItem('uwbp.useDemoRecording', useRecording ? '1' : '0');
+			window.dispatchEvent(new CustomEvent('uwbp:reload-recording'));
+		} catch {
+			// ignore
+		}
+	}
 
 	// ---- helpers ----
 	function tagId(s) {
@@ -574,6 +594,7 @@
 	// ---- mount ----
 	onMount(() => {
 		loadFromStorage();
+		loadUseRecording();
 		const ro = new ResizeObserver(onResize);
 		ro.observe(wrapEl);
 		onResize();
@@ -600,6 +621,20 @@
 </script>
 
 <PageHeader title="Demo-Aufnahme" subtitle="Bewegungsdaten für Mock-Replay aufnehmen" />
+
+<Card>
+	<div class="row-between rec-toggle">
+		<div>
+			<div class="lbl">Aufnahme abspielen</div>
+			<div class="muted">
+				{useRecording
+					? 'Auf der Live-Seite wird die aufgenommene Bewegung als Daten verwendet.'
+					: 'Auf der Live-Seite werden keine Bewegungsdaten geliefert — Tags bleiben still.'}
+			</div>
+		</div>
+		<Toggle checked={useRecording} onchange={setUseRecording} />
+	</div>
+</Card>
 
 <Card>
 	<div class="info">
