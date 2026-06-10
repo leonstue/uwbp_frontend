@@ -69,11 +69,21 @@
 
 	function applyTagCount(n) {
 		api.setTagCount(n);
-		app.clearApproved();
-		app.clearHistoryBuffer();
-		api.resetMockState();
-		toast.push({ type: 'info', message: `Tag-Anzahl auf ${n} gesetzt — Wizard erneut durchlaufen.` });
-		setTimeout(() => goto('/starten'), 400);
+		if (api.isMock) {
+			app.clearApproved();
+			app.clearHistoryBuffer();
+			api.resetMockState();
+			toast.push({
+				type: 'info',
+				message: `Tag-Anzahl auf ${n} gesetzt — Wizard erneut durchlaufen.`
+			});
+			setTimeout(() => goto('/starten'), 400);
+		} else {
+			toast.push({
+				type: 'info',
+				message: `Tag-Anzahl auf ${n} gesetzt — wird beim Aktivieren des Demo-Modus genutzt.`
+			});
+		}
 	}
 
 	function freshWizard() {
@@ -162,23 +172,22 @@
 			</div>
 			<Toggle checked={api.isMock} onchange={toggleDemoMode} />
 		</div>
-		{#if api.isMock}
-			<div class="col">
-				<Slider
-					label="Anzahl Tags"
-					bind:value={tagCountInput}
-					min={1}
-					max={4}
-					step={1}
-					unit=""
-					onchange={() => applyTagCount(tagCountInput)}
-				/>
-				<p class="hint">
-					Bei Änderung werden Geräte-Konfiguration, Freigabe und History-Buffer auf Default
-					zurückgesetzt. Du wirst zum Wizard weitergeleitet.
-				</p>
-			</div>
-		{/if}
+		<div class="col">
+			<Slider
+				label="Anzahl simulierter Tags"
+				bind:value={tagCountInput}
+				min={1}
+				max={4}
+				step={1}
+				unit=""
+				onchange={() => applyTagCount(tagCountInput)}
+			/>
+			<p class="hint">
+				{api.isMock
+					? 'Bei Änderung werden Geräte-Konfiguration, Freigabe und History-Buffer auf Default zurückgesetzt — Wizard öffnet.'
+					: 'Wird gespeichert und beim Aktivieren des Demo-Modus angewendet.'}
+			</p>
+		</div>
 		<p class="hint">
 			Beim Umschalten des Demo-Modus werden Geräte-Freigabe, gespeicherte Konfiguration und
 			History zurückgesetzt.
